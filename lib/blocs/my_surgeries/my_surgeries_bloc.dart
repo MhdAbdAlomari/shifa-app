@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/l10n/message_code.dart';
 import '../../data/models/surgery.dart';
 import '../../data/services/surgery_service.dart';
 
@@ -53,6 +54,7 @@ class MySurgeriesBloc extends Bloc<MySurgeriesEvent, MySurgeriesState> {
       emit(state.copyWith(
         status: MySurgeriesStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -72,12 +74,15 @@ class MySurgeriesBloc extends Bloc<MySurgeriesEvent, MySurgeriesState> {
       emit(state.copyWith(
         items: next,
         clearStartingId: true,
-        actionMessage: 'Surgery started',
+        actionMessageCode: MessageCode.surgeryStarted,
+        clearActionErrorMessage: true,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         clearStartingId: true,
-        actionMessage: e.message,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
       ));
     }
   }

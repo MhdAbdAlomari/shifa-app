@@ -83,6 +83,7 @@ class RoomTimelineBloc extends Bloc<RoomTimelineEvent, RoomTimelineState> {
       emit(state.copyWith(
         status: RoomTimelineStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }

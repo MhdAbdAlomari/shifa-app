@@ -83,11 +83,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(state.copyWith(
         status: AuthStatus.unauthenticated,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         status: AuthStatus.unauthenticated,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }

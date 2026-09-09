@@ -54,6 +54,7 @@ class NotificationsBloc
       emit(state.copyWith(
         status: NotificationsStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -95,7 +96,11 @@ class NotificationsBloc
       final rolled = [
         for (final n in state.items) n.id == original.id ? original : n,
       ];
-      emit(state.copyWith(items: rolled, errorMessage: e.message));
+      emit(state.copyWith(
+        items: rolled,
+        errorMessage: e.message,
+        errorCode: e.errorCode,
+      ));
     }
   }
 
@@ -130,15 +135,17 @@ class NotificationsBloc
     emit(state.copyWith(items: optimistic));
 
     String? lastError;
+    String? lastErrorCode;
     for (final n in unread) {
       try {
         await _service.markRead(n.id);
       } on ApiException catch (e) {
         lastError = e.message;
+        lastErrorCode = e.errorCode;
       }
     }
     if (lastError != null) {
-      emit(state.copyWith(errorMessage: lastError));
+      emit(state.copyWith(errorMessage: lastError, errorCode: lastErrorCode));
     }
   }
 }

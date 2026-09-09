@@ -13,7 +13,9 @@ class PickManuallyState extends Equatable {
     this.roomId,
     this.scheduledStart,
     this.errorMessage,
+    this.errorCode,
     this.submitErrorMessage,
+    this.submitErrorCode,
     this.submitErrors = const {},
     this.created,
   });
@@ -34,7 +36,15 @@ class PickManuallyState extends Equatable {
   final DateTime? scheduledStart;
 
   final String? errorMessage;
+
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
+
   final String? submitErrorMessage;
+
+  /// error_code paired with [submitErrorMessage] — see error_code_l10n.dart.
+  final String? submitErrorCode;
+
   final Map<String, List<String>> submitErrors;
 
   final Surgery? created;
@@ -48,7 +58,9 @@ class PickManuallyState extends Equatable {
     int? roomId,
     DateTime? scheduledStart,
     String? errorMessage,
+    String? errorCode,
     String? submitErrorMessage,
+    String? submitErrorCode,
     Map<String, List<String>>? submitErrors,
     Surgery? created,
     bool clearError = false,
@@ -62,9 +74,13 @@ class PickManuallyState extends Equatable {
       roomId: roomId ?? this.roomId,
       scheduledStart: scheduledStart ?? this.scheduledStart,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       submitErrorMessage: clearSubmitError
           ? null
           : (submitErrorMessage ?? this.submitErrorMessage),
+      submitErrorCode: clearSubmitError
+          ? null
+          : (submitErrorCode ?? this.submitErrorCode),
       submitErrors: submitErrors ?? this.submitErrors,
       created: created ?? this.created,
     );
@@ -79,7 +95,9 @@ class PickManuallyState extends Equatable {
         roomId,
         scheduledStart,
         errorMessage,
+        errorCode,
         submitErrorMessage,
+        submitErrorCode,
         submitErrors,
         created,
       ];

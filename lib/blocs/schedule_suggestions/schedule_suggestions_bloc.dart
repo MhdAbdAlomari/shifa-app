@@ -57,6 +57,7 @@ class ScheduleSuggestionsBloc
       emit(state.copyWith(
         status: ScheduleSuggestionsStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -72,6 +73,7 @@ class ScheduleSuggestionsBloc
     } on ApiException catch (e) {
       emit(state.copyWith(
         actionError: e.message,
+        actionErrorCode: e.errorCode,
         clearActionInFlightId: true,
       ));
     }
@@ -88,6 +90,7 @@ class ScheduleSuggestionsBloc
     } on ApiException catch (e) {
       emit(state.copyWith(
         actionError: e.message,
+        actionErrorCode: e.errorCode,
         clearActionInFlightId: true,
       ));
     }

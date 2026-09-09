@@ -13,6 +13,7 @@ class AuthState extends Equatable {
     required this.status,
     this.user,
     this.errorMessage,
+    this.errorCode,
   });
 
   const AuthState.unknown() : this(status: AuthStatus.unknown);
@@ -24,10 +25,14 @@ class AuthState extends Equatable {
   /// or logout call. The Login screen displays it in a SnackBar.
   final String? errorMessage;
 
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
+
   AuthState copyWith({
     AuthStatus? status,
     User? user,
     String? errorMessage,
+    String? errorCode,
     bool clearUser = false,
     bool clearError = false,
   }) {
@@ -35,9 +40,10 @@ class AuthState extends Equatable {
       status: status ?? this.status,
       user: clearUser ? null : (user ?? this.user),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
     );
   }
 
   @override
-  List<Object?> get props => [status, user, errorMessage];
+  List<Object?> get props => [status, user, errorMessage, errorCode];
 }

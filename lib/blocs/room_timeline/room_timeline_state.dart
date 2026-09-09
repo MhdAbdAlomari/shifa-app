@@ -26,30 +26,37 @@ class RoomTimelineState extends Equatable {
     required this.status,
     required this.snapshots,
     this.errorMessage,
+    this.errorCode,
   });
 
   const RoomTimelineState.initial()
       : status = RoomTimelineStatus.initial,
         snapshots = const [],
-        errorMessage = null;
+        errorMessage = null,
+        errorCode = null;
 
   final RoomTimelineStatus status;
   final List<RoomSnapshot> snapshots;
   final String? errorMessage;
 
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
+
   RoomTimelineState copyWith({
     RoomTimelineStatus? status,
     List<RoomSnapshot>? snapshots,
     String? errorMessage,
+    String? errorCode,
     bool clearError = false,
   }) {
     return RoomTimelineState(
       status: status ?? this.status,
       snapshots: snapshots ?? this.snapshots,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
     );
   }
 
   @override
-  List<Object?> get props => [status, snapshots, errorMessage];
+  List<Object?> get props => [status, snapshots, errorMessage, errorCode];
 }

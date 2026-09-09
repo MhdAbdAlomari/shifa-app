@@ -107,6 +107,7 @@ class AutoScheduleReviewBloc
       emit(state.copyWith(
         loadStatus: AutoScheduleLoadStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -152,6 +153,7 @@ class AutoScheduleReviewBloc
       emit(state.copyWith(
         submitStatus: AutoScheduleSubmitStatus.error,
         submitErrorMessage: e.message,
+        submitErrorCode: e.errorCode,
       ));
     }
   }
@@ -189,6 +191,7 @@ class AutoScheduleReviewBloc
     } on ApiException catch (e) {
       emit(state.copyWith(
         submitErrorMessage: e.message,
+        submitErrorCode: e.errorCode,
         clearAcceptingIndex: true,
       ));
     }

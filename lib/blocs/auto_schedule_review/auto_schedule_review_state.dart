@@ -21,7 +21,9 @@ class AutoScheduleReviewState extends Equatable {
     required this.acceptedCount,
     this.acceptingIndex,
     this.errorMessage,
+    this.errorCode,
     this.submitErrorMessage,
+    this.submitErrorCode,
   });
 
   const AutoScheduleReviewState.initial()
@@ -38,7 +40,9 @@ class AutoScheduleReviewState extends Equatable {
         acceptedCount = 0,
         acceptingIndex = null,
         errorMessage = null,
-        submitErrorMessage = null;
+        errorCode = null,
+        submitErrorMessage = null,
+        submitErrorCode = null;
 
   final AutoScheduleLoadStatus loadStatus;
   final AutoScheduleSubmitStatus submitStatus;
@@ -56,7 +60,14 @@ class AutoScheduleReviewState extends Equatable {
   final int? acceptingIndex;
 
   final String? errorMessage;
+
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
+
   final String? submitErrorMessage;
+
+  /// error_code paired with [submitErrorMessage] — see error_code_l10n.dart.
+  final String? submitErrorCode;
 
   AutoScheduleReviewState copyWith({
     AutoScheduleLoadStatus? loadStatus,
@@ -72,7 +83,9 @@ class AutoScheduleReviewState extends Equatable {
     int? acceptedCount,
     int? acceptingIndex,
     String? errorMessage,
+    String? errorCode,
     String? submitErrorMessage,
+    String? submitErrorCode,
     bool clearError = false,
     bool clearSubmitError = false,
     bool clearAcceptingIndex = false,
@@ -93,9 +106,13 @@ class AutoScheduleReviewState extends Equatable {
           ? null
           : (acceptingIndex ?? this.acceptingIndex),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       submitErrorMessage: clearSubmitError
           ? null
           : (submitErrorMessage ?? this.submitErrorMessage),
+      submitErrorCode: clearSubmitError
+          ? null
+          : (submitErrorCode ?? this.submitErrorCode),
     );
   }
 
@@ -114,6 +131,8 @@ class AutoScheduleReviewState extends Equatable {
         acceptedCount,
         acceptingIndex,
         errorMessage,
+        errorCode,
         submitErrorMessage,
+        submitErrorCode,
       ];
 }
