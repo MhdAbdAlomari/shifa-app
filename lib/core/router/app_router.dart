@@ -12,9 +12,18 @@ import '../../screens/coordinator/room_timeline_screen.dart';
 import '../../screens/coordinator/schedule_suggestions_screen.dart';
 import '../../screens/coordinator/schedule_surgery_screen.dart';
 import '../../screens/login/login_screen.dart';
+import '../../screens/manage/manage_screen.dart';
 import '../../screens/notifications/notifications_screen.dart';
+import '../../screens/patients/patients_list_screen.dart';
+import '../../screens/rooms/room_detail_screen.dart';
+import '../../screens/rooms/room_slots_screen.dart';
+import '../../screens/settings/about_screen.dart';
+import '../../screens/settings/privacy_policy_screen.dart';
+import '../../screens/settings/settings_screen.dart';
+import '../../screens/settings/terms_screen.dart';
 import '../../screens/surgeon/my_surgeries_screen.dart';
 import '../../screens/surgeon/surgery_detail_screen.dart';
+import '../../screens/surgery_types/surgery_types_list_screen.dart';
 import '../theme/app_colors.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
@@ -154,7 +163,7 @@ GoRouter buildAppRouter(AuthBloc authBloc) {
         },
       ),
 
-      // Admin
+      // Admin + coordinator
       GoRoute(
         path: '/admin/rooms',
         name: AppRoutes.adminRooms,
@@ -167,6 +176,40 @@ GoRouter buildAppRouter(AuthBloc authBloc) {
         builder: (context, _) =>
             _bootstrap(context, authBloc, const StaffListScreen()),
       ),
+      GoRoute(
+        path: '/manage',
+        name: AppRoutes.manage,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const ManageScreen()),
+      ),
+      GoRoute(
+        path: '/patients',
+        name: AppRoutes.patients,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const PatientsListScreen()),
+      ),
+      GoRoute(
+        path: '/surgery-types',
+        name: AppRoutes.surgeryTypes,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const SurgeryTypesListScreen()),
+      ),
+      GoRoute(
+        path: '/rooms/:id',
+        name: AppRoutes.roomDetail,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return _bootstrap(context, authBloc, RoomDetailScreen(roomId: id));
+        },
+      ),
+      GoRoute(
+        path: '/rooms/:id/slots',
+        name: AppRoutes.roomSlots,
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return _bootstrap(context, authBloc, RoomSlotsScreen(roomId: id));
+        },
+      ),
 
       // Shared
       GoRoute(
@@ -174,6 +217,30 @@ GoRouter buildAppRouter(AuthBloc authBloc) {
         name: AppRoutes.notifications,
         builder: (context, _) =>
             _bootstrap(context, authBloc, const NotificationsScreen()),
+      ),
+      GoRoute(
+        path: '/settings',
+        name: AppRoutes.settings,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const SettingsScreen()),
+      ),
+      GoRoute(
+        path: '/settings/about',
+        name: AppRoutes.settingsAbout,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const AboutScreen()),
+      ),
+      GoRoute(
+        path: '/settings/privacy',
+        name: AppRoutes.settingsPrivacy,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const PrivacyPolicyScreen()),
+      ),
+      GoRoute(
+        path: '/settings/terms',
+        name: AppRoutes.settingsTerms,
+        builder: (context, _) =>
+            _bootstrap(context, authBloc, const TermsScreen()),
       ),
     ],
   );
@@ -218,9 +285,24 @@ String _homeFor(UserRole role) {
 /// doesn't fire). Uses path prefixes so query strings and path
 /// parameters don't affect the check.
 ///
+/// `/rooms/`, `/staff/` (under `/admin/`), `/patients`, and
+/// `/surgery-types` are shared between admin and coordinator per the
+/// updated API — a bare role-prefix check no longer maps 1:1 to a
+/// single role, so those are matched explicitly before falling back to
+/// the `/admin/` / `/coordinator/` / `/surgeon/` prefix rule.
+///
 /// Ordering matches the route table above — new routes must be added
 /// here as well or the guard will treat them as "shared" by default.
 Set<UserRole>? _allowedRolesForPath(String location) {
+  const adminOrCoordinator = {UserRole.admin, UserRole.coordinator};
+  if (location.startsWith('/admin/rooms') ||
+      location.startsWith('/admin/staff') ||
+      location.startsWith('/patients') ||
+      location.startsWith('/surgery-types') ||
+      location.startsWith('/rooms/') ||
+      location.startsWith('/manage')) {
+    return adminOrCoordinator;
+  }
   if (location.startsWith('/admin/')) {
     return {UserRole.admin};
   }

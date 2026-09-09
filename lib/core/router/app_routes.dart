@@ -24,6 +24,17 @@ class AppRoutes {
   static const String adminRooms = 'admin.rooms';
   static const String adminStaff = 'admin.staff';
 
-  // Shared
+  // Shared (admin + coordinator)
+  static const String manage = 'manage';
+  static const String patients = 'patients';
+  static const String surgeryTypes = 'surgeryTypes';
+  static const String roomDetail = 'room.detail';
+  static const String roomSlots = 'room.slots';
+
+  // Shared (all roles)
   static const String notifications = 'notifications';
+  static const String settings = 'settings';
+  static const String settingsAbout = 'settings.about';
+  static const String settingsPrivacy = 'settings.privacy';
+  static const String settingsTerms = 'settings.terms';
 }
