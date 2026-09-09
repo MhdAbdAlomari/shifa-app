@@ -6,11 +6,13 @@ import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/notifications/notifications_bloc.dart';
 import '../../blocs/unread_notifications/unread_notifications_cubit.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/app_notification.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
@@ -40,8 +42,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Clinical Alerts'),
+      appBar: AppHeader(subtitle: l10n.subtitleClinicalAlerts),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.notifications,
@@ -63,8 +66,12 @@ class _View extends StatelessWidget {
               NotificationsStatus.loading =>
                 state.items.isEmpty ? const LoadingView() : _Body(state: state),
               NotificationsStatus.error => ErrorView(
-                  message:
-                      state.errorMessage ?? 'Failed to load notifications',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback:
+                        state.errorMessage ?? l10n.notificationsFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<NotificationsBloc>()
                       .add(const NotificationsRequested()),
@@ -85,6 +92,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () async => context
@@ -103,7 +111,7 @@ class _Body extends StatelessWidget {
             sliver: SliverToBoxAdapter(
               child: Row(
                 children: [
-                  Text('Notifications', style: AppTextStyles.headlineMd),
+                  Text(l10n.notificationsTitle, style: AppTextStyles.headlineMd),
                   const SizedBox(width: AppSpacing.xs),
                   if (state.unreadCount > 0)
                     Container(
@@ -120,7 +128,7 @@ class _Body extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        '${state.unreadCount} new',
+                        l10n.notificationsNewCount(state.unreadCount),
                         style: AppTextStyles.labelSm.copyWith(
                           color: AppColors.primary,
                         ),
@@ -133,7 +141,7 @@ class _Body extends StatelessWidget {
                           .read<NotificationsBloc>()
                           .add(const NotificationsMarkAllReadRequested()),
                       child: Text(
-                        'Mark all read',
+                        l10n.notificationsMarkAllRead,
                         style: AppTextStyles.labelLg.copyWith(
                           color: AppColors.primary,
                         ),
@@ -144,12 +152,12 @@ class _Body extends StatelessWidget {
             ),
           ),
           if (state.items.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyView(
                 icon: Icons.notifications_none,
-                title: 'No notifications',
-                subtitle: 'Updates about your surgeries will appear here.',
+                title: l10n.notificationsNoneTitle,
+                subtitle: l10n.notificationsNoneSubtitle,
               ),
             )
           else
@@ -177,12 +185,13 @@ class _NotificationRow extends StatelessWidget {
 
   final AppNotification item;
 
-  String _relative(DateTime when) {
+  String _relative(BuildContext context, DateTime when) {
+    final l10n = AppLocalizations.of(context);
     final delta = DateTime.now().difference(when.toLocal()).inSeconds;
-    if (delta < 60) return 'just now';
-    if (delta < 3600) return '${(delta / 60).floor()}m ago';
-    if (delta < 86400) return '${(delta / 3600).floor()}h ago';
-    if (delta < 604800) return '${(delta / 86400).floor()}d ago';
+    if (delta < 60) return l10n.notificationsJustNow;
+    if (delta < 3600) return l10n.notificationsMinutesAgo((delta / 60).floor());
+    if (delta < 86400) return l10n.notificationsHoursAgo((delta / 3600).floor());
+    if (delta < 604800) return l10n.notificationsDaysAgo((delta / 86400).floor());
     return DateFormat('MMM d').format(when.toLocal());
   }
 
@@ -239,7 +248,7 @@ class _NotificationRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Text(_relative(item.createdAt), style: AppTextStyles.bodySm),
+                Text(_relative(context, item.createdAt), style: AppTextStyles.bodySm),
               ],
             ),
           ),

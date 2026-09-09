@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../blocs/pick_manually/pick_manually_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/surgery_draft.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/app_snack_bar.dart';
 
 /// Stage 2 of the two-stage scheduling flow. Given a [SurgeryDraft]
 /// from stage 1, lets the coordinator pick a room and a start time,
@@ -43,8 +46,9 @@ class _View extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Or Schedule'),
+      appBar: AppHeader(subtitle: l10n.subtitleOrSchedule),
       body: SafeArea(
         top: false,
         child: BlocConsumer<PickManuallyBloc, PickManuallyState>(
@@ -54,17 +58,20 @@ class _View extends StatelessWidget {
               case PickManuallySubmitStatus.success:
                 ScaffoldMessenger.of(context)
                   ..clearSnackBars()
-                  ..showSnackBar(const SnackBar(
-                    content: Text('Surgery scheduled'),
+                  ..showSnackBar(SnackBar(
+                    content: Text(l10n.pickManuallyScheduled),
                   ));
                 context.goNamed(AppRoutes.coordinatorTimeline);
               case PickManuallySubmitStatus.failure:
                 if (state.submitErrorMessage != null) {
-                  ScaffoldMessenger.of(context)
-                    ..clearSnackBars()
-                    ..showSnackBar(
-                      SnackBar(content: Text(state.submitErrorMessage!)),
-                    );
+                  showErrorSnackBar(
+                    context,
+                    localizedErrorMessage(
+                      l10n,
+                      code: state.submitErrorCode,
+                      fallback: state.submitErrorMessage!,
+                    ),
+                  );
                 }
               case PickManuallySubmitStatus.idle:
               case PickManuallySubmitStatus.submitting:
@@ -77,7 +84,11 @@ class _View extends StatelessWidget {
               PickManuallyLoadStatus.loading =>
                 const LoadingView(),
               PickManuallyLoadStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load rooms',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback: state.errorMessage ?? l10n.pickManuallyFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<PickManuallyBloc>()
                       .add(const PickManuallyRoomsRequested()),
@@ -100,13 +111,18 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.screenEdge),
       children: [
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.arrow_forward
+                    : Icons.arrow_back,
+              ),
               onPressed: () => context.pop(),
             ),
             const SizedBox(width: AppSpacing.xxs),
@@ -114,9 +130,9 @@ class _Body extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Pick manually', style: AppTextStyles.headlineMd),
+                  Text(l10n.pickManuallyTitle, style: AppTextStyles.headlineMd),
                   Text(
-                    'Choose the room and start time',
+                    l10n.pickManuallySubtitle,
                     style: AppTextStyles.bodySm,
                   ),
                 ],
@@ -125,7 +141,7 @@ class _Body extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.md),
-        Text('Operating Room', style: AppTextStyles.labelLg),
+        Text(l10n.pickManuallyOperatingRoom, style: AppTextStyles.labelLg),
         const SizedBox(height: AppSpacing.xs),
         ...state.rooms.map((r) {
           final selected = state.roomId == r.id;
@@ -193,14 +209,14 @@ class _Body extends StatelessWidget {
             ),
           ),
         const SizedBox(height: AppSpacing.md),
-        Text('Scheduled start', style: AppTextStyles.labelLg),
+        Text(l10n.pickManuallyScheduledStart, style: AppTextStyles.labelLg),
         const SizedBox(height: AppSpacing.xs),
         InkWell(
           borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
           onTap: () => _pickStart(context),
           child: InputDecorator(
             decoration:
-                const InputDecoration(hintText: 'Pick a date and time'),
+                InputDecoration(hintText: l10n.pickManuallyPickDateTime),
             child: Row(
               children: [
                 const Icon(
@@ -212,7 +228,7 @@ class _Body extends StatelessWidget {
                 Expanded(
                   child: Text(
                     state.scheduledStart == null
-                        ? 'Pick a date and time'
+                        ? l10n.pickManuallyPickDateTime
                         : _startFmt.format(state.scheduledStart!),
                     style: AppTextStyles.bodyMd,
                   ),
@@ -231,7 +247,7 @@ class _Body extends StatelessWidget {
           ),
         const SizedBox(height: AppSpacing.lg),
         PrimaryButton(
-          label: 'Confirm scheduling',
+          label: l10n.pickManuallyConfirm,
           icon: Icons.check,
           isLoading: state.submitStatus == PickManuallySubmitStatus.submitting,
           onPressed: state.isReady
@@ -250,7 +266,9 @@ class _Body extends StatelessWidget {
     final date = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: now.subtract(const Duration(days: 1)),
+      // Server rejects any scheduled_start before now — never let the
+      // picker offer a date the submit would immediately reject.
+      firstDate: DateTime(now.year, now.month, now.day),
       lastDate: now.add(const Duration(days: 365)),
     );
     if (date == null || !context.mounted) return;

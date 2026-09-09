@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auto_schedule_review/auto_schedule_review_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -12,6 +13,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../data/models/schedule_proposal.dart';
 import '../../data/models/surgery_draft.dart';
 import '../../data/models/surgery_priority.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
@@ -19,6 +21,7 @@ import '../../widgets/empty_view.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/app_snack_bar.dart';
 
 /// Auto-Schedule Review screen.
 ///
@@ -59,8 +62,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Or Schedule'),
+      appBar: AppHeader(subtitle: l10n.subtitleOrSchedule),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.coordinatorSuggestions,
@@ -72,11 +76,14 @@ class _View extends StatelessWidget {
               p.submitErrorMessage != c.submitErrorMessage &&
               c.submitErrorMessage != null,
           listener: (context, state) {
-            ScaffoldMessenger.of(context)
-              ..clearSnackBars()
-              ..showSnackBar(
-                SnackBar(content: Text(state.submitErrorMessage!)),
-              );
+            showErrorSnackBar(
+              context,
+              localizedErrorMessage(
+                l10n,
+                code: state.submitErrorCode,
+                fallback: state.submitErrorMessage!,
+              ),
+            );
           },
           builder: (context, state) {
             return switch (state.loadStatus) {
@@ -84,7 +91,11 @@ class _View extends StatelessWidget {
               AutoScheduleLoadStatus.loading =>
                 const LoadingView(),
               AutoScheduleLoadStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load options',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback: state.errorMessage ?? l10n.autoScheduleFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<AutoScheduleReviewBloc>()
                       .add(const AutoScheduleReviewOptionsRequested()),
@@ -108,6 +119,7 @@ class _ComposePhase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         Padding(
@@ -121,11 +133,11 @@ class _ComposePhase extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Auto-Schedule Suggestions',
+                l10n.autoScheduleTitle,
                 style: AppTextStyles.headlineMd,
               ),
               Text(
-                'Optimal room slots based on surgeon availability',
+                l10n.autoScheduleSubtitle,
                 style: AppTextStyles.bodySm,
               ),
             ],
@@ -133,11 +145,10 @@ class _ComposePhase extends StatelessWidget {
         ),
         Expanded(
           child: state.pending.isEmpty
-              ? const EmptyView(
+              ? EmptyView(
                   icon: Icons.playlist_add_outlined,
-                  title: 'No pending requests',
-                  subtitle:
-                      'Add one or more surgeries to auto-schedule as a batch.',
+                  title: l10n.autoScheduleNoPendingTitle,
+                  subtitle: l10n.autoScheduleNoPendingSubtitle,
                 )
               : ListView.separated(
                   padding: const EdgeInsets.all(AppSpacing.screenEdge),
@@ -183,7 +194,7 @@ class _ComposePhase extends StatelessWidget {
           child: Column(
             children: [
               PrimaryButton(
-                label: 'Add request',
+                label: l10n.autoScheduleAddRequest,
                 icon: Icons.add,
                 variant: PrimaryButtonVariant.subdued,
                 onPressed: () => _openAddSheet(context, state),
@@ -191,8 +202,8 @@ class _ComposePhase extends StatelessWidget {
               const SizedBox(height: AppSpacing.sm),
               PrimaryButton(
                 label: state.pending.isEmpty
-                    ? 'Add a request first'
-                    : 'Generate proposals (${state.pending.length})',
+                    ? l10n.autoScheduleAddRequestFirst
+                    : l10n.autoScheduleGenerateProposals(state.pending.length),
                 icon: Icons.auto_awesome,
                 isLoading:
                     state.submitStatus == AutoScheduleSubmitStatus.submitting,
@@ -244,6 +255,7 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: AppSpacing.screenEdge,
@@ -255,11 +267,11 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('Add pending request', style: AppTextStyles.headlineMd),
+          Text(l10n.autoScheduleAddSheetTitle, style: AppTextStyles.headlineMd),
           const SizedBox(height: AppSpacing.md),
           DropdownButtonFormField<int>(
             initialValue: _patientId,
-            decoration: const InputDecoration(labelText: 'Patient'),
+            decoration: InputDecoration(labelText: l10n.scheduleSurgeryPatientLabel),
             items: [
               for (final p in widget.state.patients)
                 DropdownMenuItem(value: p.id, child: Text(p.name)),
@@ -269,7 +281,7 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<int>(
             initialValue: _surgeonId,
-            decoration: const InputDecoration(labelText: 'Surgeon'),
+            decoration: InputDecoration(labelText: l10n.scheduleSurgerySurgeonLabel),
             items: [
               for (final s in widget.state.surgeons)
                 DropdownMenuItem(value: s.id, child: Text(s.name)),
@@ -279,7 +291,7 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
           const SizedBox(height: AppSpacing.sm),
           DropdownButtonFormField<int>(
             initialValue: _typeId,
-            decoration: const InputDecoration(labelText: 'Surgery type'),
+            decoration: InputDecoration(labelText: l10n.scheduleSurgeryTypeLabel),
             items: [
               for (final t in widget.state.surgeryTypes)
                 DropdownMenuItem(value: t.id, child: Text(t.name)),
@@ -288,14 +300,14 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
           ),
           const SizedBox(height: AppSpacing.sm),
           SegmentedButton<SurgeryPriority>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: SurgeryPriority.normal,
-                label: Text('Normal'),
+                label: Text(l10n.scheduleSurgeryPriorityNormal),
               ),
               ButtonSegment(
                 value: SurgeryPriority.emergency,
-                label: Text('Emergency'),
+                label: Text(l10n.scheduleSurgeryPriorityEmergency),
               ),
             ],
             selected: {_priority},
@@ -303,7 +315,7 @@ class _AddRequestSheetState extends State<_AddRequestSheet> {
           ),
           const SizedBox(height: AppSpacing.md),
           PrimaryButton(
-            label: 'Add to batch',
+            label: l10n.autoScheduleAddToBatch,
             onPressed: _isValid
                 ? () => Navigator.of(context).pop(PendingSurgeryRequest(
                       patientId: _patientId!,
@@ -328,21 +340,24 @@ class _ReviewPhase extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (state.openProposalIndexes.isEmpty && state.proposals.isNotEmpty) {
       return Column(
         children: [
           Expanded(
             child: EmptyView(
               icon: Icons.check_circle_outline,
-              title: 'All proposals actioned',
-              subtitle:
-                  '${state.acceptedCount} scheduled, ${state.proposals.length - state.acceptedCount} skipped.',
+              title: l10n.autoScheduleAllActionedTitle,
+              subtitle: l10n.autoScheduleAllActionedSubtitle(
+                state.acceptedCount,
+                state.proposals.length - state.acceptedCount,
+              ),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.screenEdge),
             child: PrimaryButton(
-              label: 'Start a new batch',
+              label: l10n.autoScheduleStartNewBatch,
               onPressed: () => context
                   .read<AutoScheduleReviewBloc>()
                   .add(const AutoScheduleReviewReset()),
@@ -366,12 +381,12 @@ class _ReviewPhase extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Text(
-                  'Auto-Schedule Suggestions',
+                  l10n.autoScheduleTitle,
                   style: AppTextStyles.headlineMd,
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  'Optimal room slots based on surgeon availability',
+                  l10n.autoScheduleSubtitle,
                   style: AppTextStyles.bodySm,
                   textAlign: TextAlign.center,
                 ),
@@ -420,6 +435,7 @@ class _ProposalCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final patient =
         state.patients.firstWhere((p) => p.id == proposal.patientId);
     final room = state.rooms.firstWhere((r) => r.id == proposal.roomId);
@@ -464,7 +480,7 @@ class _ProposalCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xxs),
               Text(
-                '${_dayLabel(start)}, ${timeFmt.format(start)} – ${timeFmt.format(end)}',
+                '${_dayLabel(context, start)}, ${timeFmt.format(start)} – ${timeFmt.format(end)}',
                 style: AppTextStyles.bodySm,
               ),
             ],
@@ -474,7 +490,7 @@ class _ProposalCard extends StatelessWidget {
             children: [
               Expanded(
                 child: PrimaryButton(
-                  label: 'Accept',
+                  label: l10n.autoScheduleAccept,
                   icon: Icons.check,
                   isLoading: isAccepting,
                   onPressed: () => context
@@ -485,7 +501,7 @@ class _ProposalCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: PrimaryButton(
-                  label: 'Reject',
+                  label: l10n.autoScheduleReject,
                   icon: Icons.close,
                   variant: PrimaryButtonVariant.subdued,
                   onPressed: isAccepting
@@ -502,13 +518,14 @@ class _ProposalCard extends StatelessWidget {
     );
   }
 
-  String _dayLabel(DateTime dt) {
+  String _dayLabel(BuildContext context, DateTime dt) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final that = DateTime(dt.year, dt.month, dt.day);
     final delta = that.difference(today).inDays;
-    if (delta == 0) return 'Today';
-    if (delta == 1) return 'Tomorrow';
+    if (delta == 0) return l10n.autoScheduleToday;
+    if (delta == 1) return l10n.autoScheduleTomorrow;
     return DateFormat('EEE, MMM d').format(dt);
   }
 }

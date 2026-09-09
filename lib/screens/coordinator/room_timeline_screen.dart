@@ -6,12 +6,14 @@ import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/room_timeline/room_timeline_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/room_status.dart';
 import '../../data/models/surgery.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
@@ -47,8 +49,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Or Schedule'),
+      appBar: AppHeader(subtitle: l10n.subtitleOrSchedule),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.coordinatorTimeline,
@@ -64,7 +67,11 @@ class _View extends StatelessWidget {
                     ? const LoadingView()
                     : _Body(state: state),
               RoomTimelineStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load timeline',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback: state.errorMessage ?? l10n.roomTimelineFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<RoomTimelineBloc>()
                       .add(const RoomTimelineRequested()),
@@ -87,6 +94,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () async => context
@@ -110,7 +118,7 @@ class _Body extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Room Timeline', style: AppTextStyles.headlineMd),
+                        Text(l10n.roomTimelineTitle, style: AppTextStyles.headlineMd),
                         const SizedBox(height: 2),
                         Row(
                           children: [
@@ -135,12 +143,12 @@ class _Body extends StatelessWidget {
             ),
           ),
           if (state.snapshots.isEmpty)
-            const SliverFillRemaining(
+            SliverFillRemaining(
               hasScrollBody: false,
               child: EmptyView(
                 icon: Icons.meeting_room_outlined,
-                title: 'No operating rooms',
-                subtitle: 'Ask an admin to add rooms.',
+                title: l10n.roomTimelineNoRooms,
+                subtitle: l10n.roomTimelineNoRoomsSubtitle,
               ),
             )
           else
@@ -164,7 +172,7 @@ class _Body extends StatelessWidget {
             ),
             sliver: SliverToBoxAdapter(
               child: PrimaryButton(
-                label: 'Schedule surgery',
+                label: l10n.roomTimelineScheduleSurgery,
                 icon: Icons.add,
                 onPressed: () =>
                     context.goNamed(AppRoutes.coordinatorSchedule),
@@ -185,6 +193,7 @@ class _MonitoredPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -208,7 +217,7 @@ class _MonitoredPill extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.xs),
           Text(
-            '$count Suites Monitored',
+            l10n.roomTimelineSuitesMonitored(count),
             style: AppTextStyles.labelSm.copyWith(color: AppColors.primary),
           ),
         ],
@@ -248,7 +257,7 @@ class _RoomCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'OR ${snapshot.room.id}',
+                AppLocalizations.of(context).roomTimelineOr(snapshot.room.id),
                 style: AppTextStyles.headlineSm,
               ),
               if (snapshot.room.supportedSpecialty != null) ...[
@@ -311,17 +320,18 @@ class _CardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (showsCurrent) {
       final s = current!;
       final endEstimate = s.actualStart
           ?.add(Duration(minutes: s.estimatedDurationMin));
       return _CaseRow(
         icon: Icons.person_outline,
-        title: s.patient?.name ?? 'Patient #${s.patientId}',
-        subtitle: s.surgeryType?.name ?? 'Surgery',
-        rightLabel: 'ENDS',
+        title: s.patient?.name ?? l10n.roomTimelinePatientNumber(s.patientId),
+        subtitle: s.surgeryType?.name ?? l10n.roomTimelineSurgeryFallback,
+        rightLabel: l10n.roomTimelineEnds,
         rightValue: endEstimate == null
-            ? '—'
+            ? l10n.commonNotAvailable
             : timeFmt.format(endEstimate.toLocal()),
         rightHighlighted: true,
       );
@@ -330,9 +340,9 @@ class _CardBody extends StatelessWidget {
       final s = upcoming!;
       return _CaseRow(
         icon: Icons.event_available_outlined,
-        title: s.patient?.name ?? 'Patient #${s.patientId}',
-        subtitle: s.surgeryType?.name ?? 'Surgery',
-        rightLabel: 'NEXT',
+        title: s.patient?.name ?? l10n.roomTimelinePatientNumber(s.patientId),
+        subtitle: s.surgeryType?.name ?? l10n.roomTimelineSurgeryFallback,
+        rightLabel: l10n.roomTimelineNext,
         rightValue: timeFmt.format(s.scheduledStart.toLocal()),
         rightHighlighted: false,
       );
@@ -421,44 +431,45 @@ class _EmptyRoomRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (icon, title, sub) = switch (status) {
       RoomStatus.free => (
           Icons.check_circle_outline,
-          'Vacant & Ready',
-          'Ready for immediate intake',
+          l10n.roomTimelineVacantReady,
+          l10n.roomTimelineVacantReadySubtitle,
         ),
       RoomStatus.preparing => (
           Icons.autorenew,
-          'Preparing',
-          'Room is being set up',
+          l10n.roomTimelinePreparing,
+          l10n.roomTimelinePreparingSubtitle,
         ),
       RoomStatus.cleaning => (
           Icons.cleaning_services_outlined,
-          'Turnover in progress',
-          'Environmental services',
+          l10n.roomTimelineTurnover,
+          l10n.roomTimelineTurnoverSubtitle,
         ),
       RoomStatus.inUse => (
           Icons.circle,
-          'In use',
-          'No case assigned in the schedule',
+          l10n.roomTimelineInUse,
+          l10n.roomTimelineInUseSubtitle,
         ),
       null => (
           Icons.help_outline,
-          'Unknown',
-          'Room status not set',
+          l10n.commonUnknown,
+          l10n.roomTimelineUnknownStatusSubtitle,
         ),
     };
     return _CaseRow(
       icon: icon,
       title: title,
       subtitle: sub,
-      rightLabel: 'STATUS',
+      rightLabel: l10n.roomTimelineStatus,
       rightValue: switch (status) {
-        RoomStatus.free => 'Available',
-        RoomStatus.preparing => 'Preparing',
-        RoomStatus.cleaning => 'Cleaning',
-        RoomStatus.inUse => 'In use',
-        null => '—',
+        RoomStatus.free => l10n.roomTimelineAvailable,
+        RoomStatus.preparing => l10n.roomTimelinePreparing,
+        RoomStatus.cleaning => l10n.roomTimelineCleaning,
+        RoomStatus.inUse => l10n.roomTimelineInUse,
+        null => l10n.commonNotAvailable,
       },
       rightHighlighted: status == RoomStatus.free,
     );
