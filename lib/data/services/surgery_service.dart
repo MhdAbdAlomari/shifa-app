@@ -141,10 +141,20 @@ class SurgeryService {
     return Surgery.fromJson(res.data!['data'] as Map<String, dynamic>);
   }
 
-  // POST /api/surgeries/{surgery}/delay  (surgeon)
-  Future<DelayResponse> delay(int id) async {
-    final res = await _client
-        .post<Map<String, dynamic>>(ApiConstants.surgeryDelay(id));
+  // POST /api/surgeries/{surgery}/delay  (surgeon, own in-progress surgery only)
+  // new_expected_end must be strictly after now; reason is free text, min 3 chars.
+  Future<DelayResponse> delay(
+    int id, {
+    required DateTime newExpectedEnd,
+    required String reason,
+  }) async {
+    final res = await _client.post<Map<String, dynamic>>(
+      ApiConstants.surgeryDelay(id),
+      data: {
+        'new_expected_end': formatServerDateTime(newExpectedEnd),
+        'reason': reason,
+      },
+    );
     return DelayResponse.fromJson(res.data!);
   }
 }

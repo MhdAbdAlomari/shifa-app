@@ -1,23 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/surgery_detail/surgery_detail_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/message_code.dart';
+import '../../data/models/delay_response.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/surgery.dart';
 import '../../data/models/surgery_status.dart';
 import '../../data/models/user_role.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/app_snack_bar.dart';
+
+String _messageText(AppLocalizations l10n, MessageCode? code, String? error) {
+  if (code != null) {
+    return switch (code) {
+      MessageCode.surgeryCancelled => l10n.messageSurgeryCancelled,
+      _ => error ?? '',
+    };
+  }
+  return error ?? '';
+}
 
 /// Detail view for a single surgery. Role-aware action bar:
 ///   - Surgeon: Start / Complete / Report delay.
@@ -47,17 +61,29 @@ class _View extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'My Surgeries'),
+      appBar: AppHeader(subtitle: l10n.subtitleMySurgeries),
       body: SafeArea(
         top: false,
         child: BlocConsumer<SurgeryDetailBloc, SurgeryDetailState>(
           listenWhen: (p, c) =>
-              p.actionMessage != c.actionMessage && c.actionMessage != null,
+              (p.actionMessageCode != c.actionMessageCode ||
+                  p.actionErrorMessage != c.actionErrorMessage) &&
+              (c.actionMessageCode != null || c.actionErrorMessage != null),
           listener: (context, state) {
-            ScaffoldMessenger.of(context)
-              ..clearSnackBars()
-              ..showSnackBar(SnackBar(content: Text(state.actionMessage!)));
+            final message = _messageText(
+              l10n,
+              state.actionMessageCode,
+              state.actionErrorMessage,
+            );
+            if (state.actionErrorMessage != null) {
+              showErrorSnackBar(context, message);
+            } else {
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(message)));
+            }
           },
           builder: (context, state) {
             return switch (state.status) {
@@ -65,7 +91,7 @@ class _View extends StatelessWidget {
               SurgeryDetailStatus.loading =>
                 const LoadingView(),
               SurgeryDetailStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load surgery',
+                  message: state.errorMessage ?? l10n.surgeryDetailFailedToLoad,
                   onRetry: () => context
                       .read<SurgeryDetailBloc>()
                       .add(const SurgeryDetailRequested()),
@@ -89,6 +115,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final surgery = state.surgery!;
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
@@ -99,11 +126,15 @@ class _Body extends StatelessWidget {
         Row(
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: Icon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Icons.arrow_forward
+                    : Icons.arrow_back,
+              ),
               onPressed: () => context.canPop() ? context.pop() : null,
             ),
             const Spacer(),
-            Text('Surgery Details', style: AppTextStyles.titleLg),
+            Text(l10n.surgeryDetailTitle, style: AppTextStyles.titleLg),
             const Spacer(),
             const SizedBox(width: 48),
           ],
@@ -135,12 +166,13 @@ class _Body extends StatelessWidget {
                       children: [
                         Text(
                           surgery.patient?.name ??
-                              'Patient #${surgery.patientId}',
+                              l10n.surgeryDetailPatientNumber(
+                                  surgery.patientId),
                           style: AppTextStyles.headlineSm,
                         ),
                         if (surgery.patient != null)
                           Text(
-                            'MRN ${surgery.patient!.mrn}',
+                            l10n.surgeryDetailMrn(surgery.patient!.mrn),
                             style: AppTextStyles.bodySm,
                           ),
                       ],
@@ -163,9 +195,9 @@ class _Body extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('PROCEDURE', style: AppTextStyles.labelSm),
+                    Text(l10n.surgeryDetailProcedure, style: AppTextStyles.labelSm),
                     Text(
-                      surgery.surgeryType?.name ?? 'Surgery',
+                      surgery.surgeryType?.name ?? l10n.surgeryDetailSurgeryFallback,
                       style: AppTextStyles.titleLg,
                     ),
                   ],
@@ -177,16 +209,18 @@ class _Body extends StatelessWidget {
                   Expanded(
                     child: _MiniStat(
                       icon: Icons.meeting_room_outlined,
-                      label: 'Assigned Suite',
-                      value: surgery.room?.name ?? 'Room #${surgery.roomId}',
+                      label: l10n.surgeryDetailAssignedSuite,
+                      value: surgery.room?.name ??
+                          l10n.surgeryDetailRoomNumber(surgery.roomId),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: _MiniStat(
                       icon: Icons.timelapse,
-                      label: 'Target Pace',
-                      value: '${surgery.estimatedDurationMin} min',
+                      label: l10n.surgeryDetailTargetPace,
+                      value: l10n.surgeryDetailMinutesShort(
+                          surgery.estimatedDurationMin),
                     ),
                   ),
                 ],
@@ -200,7 +234,7 @@ class _Body extends StatelessWidget {
                     color: AppColors.textSecondary,
                   ),
                   const SizedBox(width: AppSpacing.xxs),
-                  Text('Scheduled Slot', style: AppTextStyles.labelLg),
+                  Text(l10n.surgeryDetailScheduledSlot, style: AppTextStyles.labelLg),
                   const Spacer(),
                   Text(
                     _slotLabel(surgery, _timeFmt, _dateFmt),
@@ -211,7 +245,7 @@ class _Body extends StatelessWidget {
               const SizedBox(height: AppSpacing.xs),
               Row(
                 children: [
-                  Text('Actual Time', style: AppTextStyles.labelLg),
+                  Text(l10n.surgeryDetailActualTime, style: AppTextStyles.labelLg),
                   const Spacer(),
                   _ActualTimePill(surgery: surgery, timeFmt: _timeFmt),
                 ],
@@ -237,7 +271,8 @@ class _Body extends StatelessWidget {
                     const SizedBox(width: AppSpacing.xxs),
                     Expanded(
                       child: Text(
-                        'Estimated duration ${surgery.estimatedDurationMin} mins',
+                        l10n.surgeryDetailEstimatedDuration(
+                            surgery.estimatedDurationMin),
                         style: AppTextStyles.bodySm,
                       ),
                     ),
@@ -269,6 +304,10 @@ class _Body extends StatelessWidget {
             ],
           ),
         ),
+        if (state.delayResponse != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          _DelayResultBanner(response: state.delayResponse!),
+        ],
         const SizedBox(height: AppSpacing.lg),
         _Actions(surgery: surgery, role: user.role, state: state),
       ],
@@ -337,13 +376,14 @@ class _ActualTimePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (surgery.actualStart == null) {
-      return Text('—', style: AppTextStyles.bodyMd);
+      return Text(l10n.commonNotAvailable, style: AppTextStyles.bodyMd);
     }
     final start = surgery.actualStart!.toLocal();
     final label = surgery.actualEnd == null
-        ? 'In Progress (Started ${timeFmt.format(start)})'
-        : 'Ended ${timeFmt.format(surgery.actualEnd!.toLocal())}';
+        ? l10n.surgeryDetailInProgressStarted(timeFmt.format(start))
+        : l10n.surgeryDetailEnded(timeFmt.format(surgery.actualEnd!.toLocal()));
     final isRunning = surgery.actualEnd == null;
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -370,6 +410,81 @@ class _ActualTimePill extends StatelessWidget {
   }
 }
 
+class _DelayResultBanner extends StatelessWidget {
+  const _DelayResultBanner({required this.response});
+
+  final DelayResponse response;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    // Built entirely from the response's structured fields, never the
+    // raw backend `message` — that's an untranslated English sentence
+    // and can't be localized by parsing it client-side.
+    final String body;
+    if (response.autoApproved) {
+      final newEnd = response.surgery?.scheduledEnd?.toLocal();
+      final locale = Localizations.localeOf(context).toString();
+      body = l10n.delayResultAutoApprovedBody(
+        newEnd == null
+            ? ''
+            : DateFormat('EEE, MMM d · h:mm a', locale).format(newEnd),
+      );
+    } else {
+      body = l10n.delayResultPendingBody(
+        response.conflictWithSurgeryId ?? 0,
+        response.suggestions.length,
+      );
+    }
+    // Auto-approved reads as a confirmation (primary/green), pending
+    // review reads as a warning the surgeon should notice (amber) —
+    // neither is an error, so neither uses the danger treatment.
+    final (bg, border, fg, icon) = response.autoApproved
+        ? (
+            AppColors.statusFreeBg,
+            AppColors.statusFreeBorder,
+            AppColors.primary,
+            Icons.check_circle_outline,
+          )
+        : (
+            AppColors.statusPreparingBg,
+            AppColors.statusPreparingBorder,
+            AppColors.accentText,
+            Icons.hourglass_top_outlined,
+          );
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusSmall),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: fg),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  response.autoApproved
+                      ? l10n.delayResultAutoApprovedTitle
+                      : l10n.delayResultPendingTitle,
+                  style: AppTextStyles.labelLg.copyWith(color: fg),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(body, style: AppTextStyles.bodySm),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _Actions extends StatelessWidget {
   const _Actions({
     required this.surgery,
@@ -383,37 +498,27 @@ class _Actions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final isBusy = state.actionStatus == SurgeryActionStatus.running;
 
     if (role == UserRole.surgeon) {
       return switch (surgery.status) {
-        SurgeryStatus.scheduled => Column(
-            children: [
-              PrimaryButton(
-                label: 'Start Surgery',
-                icon: Icons.play_arrow,
-                isLoading: isBusy,
-                onPressed: () => context
-                    .read<SurgeryDetailBloc>()
-                    .add(const SurgeryDetailStartRequested()),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _TextAction(
-                label: 'Report Delay',
-                icon: Icons.warning_amber_outlined,
-                color: AppColors.accentText,
-                onPressed: isBusy
-                    ? null
-                    : () => context
-                        .read<SurgeryDetailBloc>()
-                        .add(const SurgeryDetailDelayRequested()),
-              ),
-            ],
+        SurgeryStatus.scheduled => PrimaryButton(
+            label: l10n.surgeryDetailStartSurgery,
+            icon: Icons.play_arrow,
+            isLoading: isBusy,
+            onPressed: () => context
+                .read<SurgeryDetailBloc>()
+                .add(const SurgeryDetailStartRequested()),
           ),
+        // Report Delay only applies to an in-progress surgery — the
+        // backend rejects it otherwise with surgery_not_in_progress
+        // (see the delay endpoint's precondition #2 in the API doc),
+        // so it's not offered on a merely-scheduled case.
         SurgeryStatus.inProgress => Column(
             children: [
               PrimaryButton(
-                label: 'Mark Complete',
+                label: l10n.surgeryDetailMarkComplete,
                 icon: Icons.check,
                 isLoading: isBusy,
                 onPressed: () => context
@@ -422,14 +527,12 @@ class _Actions extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               _TextAction(
-                label: 'Report Delay',
+                label: l10n.surgeryDetailReportDelay,
                 icon: Icons.warning_amber_outlined,
                 color: AppColors.accentText,
                 onPressed: isBusy
                     ? null
-                    : () => context
-                        .read<SurgeryDetailBloc>()
-                        .add(const SurgeryDetailDelayRequested()),
+                    : () => _openDelaySheet(context),
               ),
             ],
           ),
@@ -444,7 +547,7 @@ class _Actions extends StatelessWidget {
         surgery.status != SurgeryStatus.cancelled &&
         surgery.status != SurgeryStatus.completed) {
       return PrimaryButton(
-        label: 'Cancel surgery',
+        label: l10n.surgeryDetailCancelSurgery,
         icon: Icons.cancel_outlined,
         variant: PrimaryButtonVariant.danger,
         isLoading: isBusy,
@@ -454,6 +557,155 @@ class _Actions extends StatelessWidget {
       );
     }
     return const SizedBox.shrink();
+  }
+
+  Future<void> _openDelaySheet(BuildContext context) async {
+    final bloc = context.read<SurgeryDetailBloc>();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => BlocProvider.value(
+        value: bloc,
+        child: const _DelayFormSheet(),
+      ),
+    );
+  }
+}
+
+class _DelayFormSheet extends StatefulWidget {
+  const _DelayFormSheet();
+
+  @override
+  State<_DelayFormSheet> createState() => _DelayFormSheetState();
+}
+
+class _DelayFormSheetState extends State<_DelayFormSheet> {
+  final _reasonController = TextEditingController();
+  DateTime? _newExpectedEnd;
+
+  static final _fmt = DateFormat('EEE, MMM d · h:mm a');
+
+  @override
+  void dispose() {
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickNewEnd(BuildContext context) async {
+    final now = DateTime.now();
+    final initial = _newExpectedEnd ?? now.add(const Duration(hours: 1));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      // Server requires new_expected_end strictly after now.
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (date == null || !context.mounted) return;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+    );
+    if (time == null) return;
+    setState(() {
+      _newExpectedEnd =
+          DateTime(date.year, date.month, date.day, time.hour, time.minute);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return BlocListener<SurgeryDetailBloc, SurgeryDetailState>(
+      listenWhen: (p, c) =>
+          p.delayResponse != c.delayResponse && c.delayResponse != null,
+      listener: (context, state) {
+        // The delay result banner (auto-approved vs pending) is shown
+        // on the detail screen itself once this sheet closes — a
+        // one-shot SnackBar would undersell which of the two outcomes
+        // happened.
+        Navigator.of(context).pop();
+      },
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.screenEdge,
+          right: AppSpacing.screenEdge,
+          top: AppSpacing.xs,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
+        ),
+        child: SingleChildScrollView(
+          child: BlocBuilder<SurgeryDetailBloc, SurgeryDetailState>(
+            builder: (context, state) {
+              final endError = state.delayFormErrors['new_expected_end']?.first;
+              final reasonError = state.delayFormErrors['reason']?.first;
+              final isBusy = state.actionStatus == SurgeryActionStatus.running;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(l10n.delayFormTitle, style: AppTextStyles.headlineMd),
+                  const SizedBox(height: AppSpacing.md),
+                  InkWell(
+                    onTap: () => _pickNewEnd(context),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.delayFormNewEndLabel,
+                        errorText: endError,
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.event,
+                            size: 18,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              _newExpectedEnd == null
+                                  ? l10n.delayFormNewEndHint
+                                  : _fmt.format(_newExpectedEnd!),
+                              style: AppTextStyles.bodyMd,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TextFormField(
+                    controller: _reasonController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: l10n.delayFormReasonLabel,
+                      hintText: l10n.delayFormReasonHint,
+                      errorText: reasonError,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  PrimaryButton(
+                    label: l10n.delayFormSubmit,
+                    icon: Icons.warning_amber_outlined,
+                    variant: PrimaryButtonVariant.danger,
+                    isLoading: isBusy,
+                    onPressed: _newExpectedEnd == null
+                        ? null
+                        : () => context.read<SurgeryDetailBloc>().add(
+                              SurgeryDetailDelayRequested(
+                                newExpectedEnd: _newExpectedEnd!,
+                                reason: _reasonController.text.trim(),
+                              ),
+                            ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 }
 

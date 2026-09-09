@@ -20,7 +20,16 @@ class SurgeryDetailCompleteRequested extends SurgeryDetailEvent {
 }
 
 class SurgeryDetailDelayRequested extends SurgeryDetailEvent {
-  const SurgeryDetailDelayRequested();
+  const SurgeryDetailDelayRequested({
+    required this.newExpectedEnd,
+    required this.reason,
+  });
+
+  final DateTime newExpectedEnd;
+  final String reason;
+
+  @override
+  List<Object?> get props => [newExpectedEnd, reason];
 }
 
 class SurgeryDetailCancelRequested extends SurgeryDetailEvent {
