@@ -7,23 +7,50 @@ import '../data/models/room_status.dart';
 import '../data/models/schedule_suggestion_status.dart';
 import '../data/models/surgery_priority.dart';
 import '../data/models/surgery_status.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Small colored pill used to communicate an entity's state at a
 /// glance. Named constructors map every enum in the app to a fixed
-/// (label, background, foreground, border) triple per DESIGN.md's
-/// clinical status palette — screens never pass raw hex.
+/// (background, foreground, border) triple per DESIGN.md's clinical
+/// status palette — screens never pass raw hex. The label itself is
+/// resolved from the enum in [build] (not the constructor) so it can
+/// read the active locale from [BuildContext].
 class StatusBadge extends StatelessWidget {
-  const StatusBadge._({
-    required this.label,
-    required this.background,
-    required this.foreground,
-    required this.borderColor,
-  });
+  const StatusBadge._room(this._roomStatus)
+      : _surgeryStatus = null,
+        _priority = null,
+        _suggestionStatus = null;
 
-  final String label;
-  final Color background;
-  final Color foreground;
-  final Color borderColor;
+  const StatusBadge._surgery(this._surgeryStatus)
+      : _roomStatus = null,
+        _priority = null,
+        _suggestionStatus = null;
+
+  const StatusBadge._priority(this._priority)
+      : _roomStatus = null,
+        _surgeryStatus = null,
+        _suggestionStatus = null;
+
+  const StatusBadge._suggestion(this._suggestionStatus)
+      : _roomStatus = null,
+        _surgeryStatus = null,
+        _priority = null;
+
+  final RoomStatus? _roomStatus;
+  final SurgeryStatus? _surgeryStatus;
+  final SurgeryPriority? _priority;
+  final ScheduleSuggestionStatus? _suggestionStatus;
+
+  // `_roomStatus` is nullable independent of which factory built this
+  // instance (a room can have an unset status) — a separate flag says
+  // whether this badge is a room badge at all.
+  const factory StatusBadge.room(RoomStatus? status) = StatusBadge._room;
+  const factory StatusBadge.surgery(SurgeryStatus status) =
+      StatusBadge._surgery;
+  const factory StatusBadge.priority(SurgeryPriority priority) =
+      StatusBadge._priority;
+  const factory StatusBadge.suggestion(ScheduleSuggestionStatus status) =
+      StatusBadge._suggestion;
 
   static const _free = _Palette(
     AppColors.statusFreeBg,
@@ -45,69 +72,67 @@ class StatusBadge extends StatelessWidget {
     AppColors.statusCleaningText,
     AppColors.statusCleaningBorder,
   );
+  static const _neutral = _Palette(
+    AppColors.softHover,
+    AppColors.textSecondary,
+    AppColors.divider,
+  );
+  // Solid danger fill — deliberately louder than every other badge
+  // (which use a soft tint + matching text). Emergency priority and
+  // delayed status are the two states where a hospital app should
+  // never let a glance miss them (item 6: increase red's visual
+  // weight specifically for emergency/delayed/error states).
+  static const _danger = _Palette(
+    AppColors.danger,
+    AppColors.textOnPrimary,
+    AppColors.danger,
+  );
 
-  factory StatusBadge.room(RoomStatus? status) {
-    if (status == null) {
-      return const StatusBadge._(
-        label: 'Unknown',
-        background: AppColors.softHover,
-        foreground: AppColors.textSecondary,
-        borderColor: AppColors.divider,
-      );
+  (String, _Palette) _resolve(AppLocalizations l10n) {
+    if (_surgeryStatus != null) {
+      return switch (_surgeryStatus) {
+        // Scheduled surgeries render like "Free" — awaiting, positive.
+        SurgeryStatus.scheduled => (l10n.roomsListStatusFree, _free),
+        SurgeryStatus.inProgress => (l10n.mySurgeriesInProgress, _inUse),
+        SurgeryStatus.completed => (l10n.statusCompleted, _cleaning),
+        SurgeryStatus.cancelled => (l10n.statusCancelled, _cleaning),
+        SurgeryStatus.delayed => (l10n.mySurgeriesDelayed, _danger),
+      };
     }
-    return switch (status) {
-      RoomStatus.free => _from('Free', _free),
-      RoomStatus.preparing => _from('Preparing', _preparing),
-      RoomStatus.inUse => _from('In use', _inUse),
-      RoomStatus.cleaning => _from('Cleaning', _cleaning),
+    if (_priority != null) {
+      return switch (_priority) {
+        SurgeryPriority.normal => (
+            l10n.scheduleSurgeryPriorityNormal,
+            _neutral,
+          ),
+        SurgeryPriority.emergency => (
+            l10n.scheduleSurgeryPriorityEmergency,
+            _danger,
+          ),
+      };
+    }
+    if (_suggestionStatus != null) {
+      return switch (_suggestionStatus) {
+        ScheduleSuggestionStatus.pending => (l10n.statusPending, _preparing),
+        ScheduleSuggestionStatus.accepted => (l10n.statusAccepted, _free),
+        ScheduleSuggestionStatus.rejected => (
+            l10n.statusRejected,
+            _cleaning,
+          ),
+      };
+    }
+    return switch (_roomStatus) {
+      RoomStatus.free => (l10n.roomsListStatusFree, _free),
+      RoomStatus.preparing => (l10n.roomsListStatusPreparing, _preparing),
+      RoomStatus.inUse => (l10n.roomsListStatusInUse, _inUse),
+      RoomStatus.cleaning => (l10n.roomsListStatusCleaning, _cleaning),
+      null => (l10n.commonUnknown, _neutral),
     };
   }
-
-  factory StatusBadge.surgery(SurgeryStatus status) {
-    return switch (status) {
-      // Scheduled surgeries render like "Free" — awaiting, positive.
-      SurgeryStatus.scheduled => _from('Scheduled', _free),
-      SurgeryStatus.inProgress => _from('In progress', _inUse),
-      SurgeryStatus.completed => _from('Completed', _cleaning),
-      SurgeryStatus.cancelled => _from('Cancelled', _cleaning),
-      SurgeryStatus.delayed => _from('Delayed', _preparing),
-    };
-  }
-
-  factory StatusBadge.priority(SurgeryPriority priority) {
-    return switch (priority) {
-      SurgeryPriority.normal => const StatusBadge._(
-          label: 'Normal',
-          background: AppColors.softHover,
-          foreground: AppColors.textSecondary,
-          borderColor: AppColors.divider,
-        ),
-      SurgeryPriority.emergency => const StatusBadge._(
-          label: 'Emergency',
-          background: Color(0xFFFFDAD6),
-          foreground: AppColors.danger,
-          borderColor: Color(0xFFFFB4AB),
-        ),
-    };
-  }
-
-  factory StatusBadge.suggestion(ScheduleSuggestionStatus status) {
-    return switch (status) {
-      ScheduleSuggestionStatus.pending => _from('Pending', _preparing),
-      ScheduleSuggestionStatus.accepted => _from('Accepted', _free),
-      ScheduleSuggestionStatus.rejected => _from('Rejected', _cleaning),
-    };
-  }
-
-  static StatusBadge _from(String label, _Palette p) => StatusBadge._(
-        label: label,
-        background: p.bg,
-        foreground: p.fg,
-        borderColor: p.border,
-      );
 
   @override
   Widget build(BuildContext context) {
+    final (label, palette) = _resolve(AppLocalizations.of(context));
     return Container(
       constraints: const BoxConstraints(minHeight: 24),
       padding: const EdgeInsets.symmetric(
@@ -115,16 +140,16 @@ class StatusBadge extends StatelessWidget {
         vertical: 2,
       ),
       decoration: BoxDecoration(
-        color: background,
+        color: palette.bg,
         borderRadius: BorderRadius.circular(AppSpacing.radiusPill),
-        border: Border.all(color: borderColor),
+        border: Border.all(color: palette.border),
       ),
       child: Center(
         widthFactor: 1,
         child: Text(
           label,
           style: AppTextStyles.labelSm.copyWith(
-            color: foreground,
+            color: palette.fg,
             fontWeight: FontWeight.w600,
           ),
         ),
