@@ -4,12 +4,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/staff_list/staff_list_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
+import '../../core/l10n/message_code.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/user.dart';
 import '../../data/models/user_role.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
@@ -18,6 +21,28 @@ import '../../widgets/error_view.dart';
 import '../../widgets/filter_pills.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/primary_button.dart';
+import '../../widgets/app_snack_bar.dart';
+
+String _messageText(
+  AppLocalizations l10n,
+  MessageCode? code,
+  String? error, [
+  String? errorCode,
+]) {
+  if (code != null) {
+    return switch (code) {
+      MessageCode.roomDeleted => l10n.messageRoomDeleted,
+      MessageCode.roomAdded => l10n.messageRoomAdded,
+      MessageCode.staffDeleted => l10n.messageStaffDeleted,
+      MessageCode.staffAdded => l10n.messageStaffAdded,
+      MessageCode.staffUpdated => l10n.messageStaffUpdated,
+      MessageCode.surgeryStarted => l10n.messageSurgeryStarted,
+      MessageCode.surgeryCancelled => l10n.messageSurgeryCancelled,
+      _ => localizedErrorMessage(l10n, code: errorCode, fallback: error ?? ''),
+    };
+  }
+  return localizedErrorMessage(l10n, code: errorCode, fallback: error ?? '');
+}
 
 class StaffListScreen extends StatelessWidget {
   const StaffListScreen({super.key});
@@ -41,8 +66,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Or Schedule'),
+      appBar: AppHeader(subtitle: l10n.subtitleOrSchedule),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.adminStaff,
@@ -51,11 +77,23 @@ class _View extends StatelessWidget {
         top: false,
         child: BlocConsumer<StaffListBloc, StaffListState>(
           listenWhen: (p, c) =>
-              p.actionMessage != c.actionMessage && c.actionMessage != null,
+              (p.actionMessageCode != c.actionMessageCode ||
+                  p.actionErrorMessage != c.actionErrorMessage) &&
+              (c.actionMessageCode != null || c.actionErrorMessage != null),
           listener: (context, state) {
-            ScaffoldMessenger.of(context)
-              ..clearSnackBars()
-              ..showSnackBar(SnackBar(content: Text(state.actionMessage!)));
+            final message = _messageText(
+              l10n,
+              state.actionMessageCode,
+              state.actionErrorMessage,
+              state.actionErrorCode,
+            );
+            if (state.actionErrorMessage != null) {
+              showErrorSnackBar(context, message);
+            } else {
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(message)));
+            }
           },
           builder: (context, state) {
             return switch (state.status) {
@@ -63,7 +101,11 @@ class _View extends StatelessWidget {
               StaffListStatus.loading =>
                 state.users.isEmpty ? const LoadingView() : _Body(state: state),
               StaffListStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load staff',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback: state.errorMessage ?? l10n.staffListFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<StaffListBloc>()
                       .add(const StaffListRequested()),
@@ -84,6 +126,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final visible = state.visibleUsers;
     return Column(
       children: [
@@ -101,9 +144,9 @@ class _Body extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Staff Directory', style: AppTextStyles.headlineMd),
+                    Text(l10n.staffListTitle, style: AppTextStyles.headlineMd),
                     Text(
-                      'Surgical suites & clinical personnel overview',
+                      l10n.staffListSubtitle,
                       style: AppTextStyles.bodySm,
                     ),
                   ],
@@ -121,7 +164,7 @@ class _Body extends StatelessWidget {
                   border: Border.all(color: AppColors.statusFreeBorder),
                 ),
                 child: Text(
-                  '${state.users.length} Active',
+                  l10n.staffListActiveCount(state.users.length),
                   style: AppTextStyles.labelSm
                       .copyWith(color: AppColors.primary),
                 ),
@@ -134,10 +177,10 @@ class _Body extends StatelessWidget {
             horizontal: AppSpacing.screenEdge,
           ),
           child: TextField(
-            decoration: const InputDecoration(
-              hintText: 'Filter by name, email or specialty…',
+            decoration: InputDecoration(
+              hintText: l10n.staffListSearchHint,
               prefixIcon:
-                  Icon(Icons.search, color: AppColors.textSecondary),
+                  const Icon(Icons.search, color: AppColors.textSecondary),
             ),
             onChanged: (v) =>
                 context.read<StaffListBloc>().add(StaffListSearchChanged(v)),
@@ -147,16 +190,21 @@ class _Body extends StatelessWidget {
         FilterPills<StaffListFilter>(
           options: [
             FilterOption(
-              label: 'All (${state.countOf(StaffListFilter.all)})',
+              label: l10n.staffListFilterAll(
+                state.countOf(StaffListFilter.all),
+              ),
               value: StaffListFilter.all,
             ),
             FilterOption(
-              label: 'Surgeons (${state.countOf(StaffListFilter.surgeon)})',
+              label: l10n.staffListFilterSurgeons(
+                state.countOf(StaffListFilter.surgeon),
+              ),
               value: StaffListFilter.surgeon,
             ),
             FilterOption(
-              label:
-                  'Coordinators (${state.countOf(StaffListFilter.coordinator)})',
+              label: l10n.staffListFilterCoordinators(
+                state.countOf(StaffListFilter.coordinator),
+              ),
               value: StaffListFilter.coordinator,
             ),
           ],
@@ -174,12 +222,12 @@ class _Body extends StatelessWidget {
             child: visible.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    children: const [
-                      SizedBox(height: 80),
+                    children: [
+                      const SizedBox(height: 80),
                       EmptyView(
                         icon: Icons.people_outline,
-                        title: 'No matching staff',
-                        subtitle: 'Try a different filter or search term.',
+                        title: l10n.staffListNoMatchTitle,
+                        subtitle: l10n.staffListNoMatchSubtitle,
                       ),
                     ],
                   )
@@ -198,7 +246,7 @@ class _Body extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(AppSpacing.screenEdge),
           child: PrimaryButton(
-            label: 'Add Staff',
+            label: l10n.staffListAddStaff,
             icon: Icons.person_add_alt_1,
             isLoading: state.creating,
             onPressed: () => _openAddSheet(context),
@@ -220,7 +268,8 @@ class _Body extends StatelessWidget {
       bloc.add(StaffListCreateRequested(
         name: draft.name,
         email: draft.email,
-        password: draft.password,
+        // Non-null: add-mode's form validator requires a password.
+        password: draft.password!,
         role: draft.role,
         specialty: draft.specialty,
       ));
@@ -237,6 +286,7 @@ class _StaffRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      onTap: () => _openEditSheet(context),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: AppSpacing.sm,
@@ -289,6 +339,26 @@ class _StaffRow extends StatelessWidget {
     );
   }
 
+  Future<void> _openEditSheet(BuildContext context) async {
+    final bloc = context.read<StaffListBloc>();
+    final draft = await showModalBottomSheet<_StaffDraft>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _AddStaffSheet(existing: user),
+    );
+    if (draft != null) {
+      bloc.add(StaffListUpdateRequested(
+        id: user.id,
+        name: draft.name,
+        email: draft.email,
+        password: draft.password,
+        role: draft.role,
+        specialty: draft.specialty,
+      ));
+    }
+  }
+
   String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((s) => s.isNotEmpty);
     if (parts.isEmpty) return '?';
@@ -297,22 +367,21 @@ class _StaffRow extends StatelessWidget {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Remove ${user.name}?'),
-        content: const Text(
-          'If this user has scheduled surgeries, the removal will fail.',
-        ),
+        title: Text(l10n.staffListRemoveTitle(user.name)),
+        content: Text(l10n.staffListRemoveBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Remove'),
+            child: Text(l10n.commonRemove),
           ),
         ],
       ),
@@ -330,21 +399,22 @@ class _RolePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final (label, bg, fg, border) = switch (role) {
       UserRole.admin => (
-          'Admin',
+          l10n.staffListRoleAdmin,
           AppColors.softHover,
           AppColors.textSecondary,
           AppColors.divider,
         ),
       UserRole.coordinator => (
-          'Coordinator',
+          l10n.staffListRoleCoordinator,
           AppColors.statusPreparingBg,
           AppColors.accentText,
           AppColors.statusPreparingBorder,
         ),
       UserRole.surgeon => (
-          'Surgeon',
+          l10n.staffListRoleSurgeon,
           AppColors.statusFreeBg,
           AppColors.primary,
           AppColors.statusFreeBorder,
@@ -372,19 +442,23 @@ class _StaffDraft {
   const _StaffDraft({
     required this.name,
     required this.email,
-    required this.password,
     required this.role,
-    required this.specialty,
+    this.password,
+    this.specialty,
   });
   final String name;
   final String email;
-  final String password;
   final UserRole role;
+  final String? password;
   final String? specialty;
 }
 
+/// Add/Edit Staff form. Pass [existing] to pre-fill and switch to edit
+/// mode (password becomes optional — leave blank to keep it unchanged).
 class _AddStaffSheet extends StatefulWidget {
-  const _AddStaffSheet();
+  const _AddStaffSheet({this.existing});
+
+  final User? existing;
 
   @override
   State<_AddStaffSheet> createState() => _AddStaffSheetState();
@@ -392,11 +466,16 @@ class _AddStaffSheet extends StatefulWidget {
 
 class _AddStaffSheetState extends State<_AddStaffSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
+  late final _nameController =
+      TextEditingController(text: widget.existing?.name ?? '');
+  late final _emailController =
+      TextEditingController(text: widget.existing?.email ?? '');
   final _passwordController = TextEditingController();
-  final _specialtyController = TextEditingController();
-  UserRole _role = UserRole.coordinator;
+  late final _specialtyController =
+      TextEditingController(text: widget.existing?.specialty ?? '');
+  late UserRole _role = widget.existing?.role ?? UserRole.coordinator;
+
+  bool get _isEditing => widget.existing != null;
 
   @override
   void dispose() {
@@ -409,6 +488,7 @@ class _AddStaffSheetState extends State<_AddStaffSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: EdgeInsets.only(
         left: AppSpacing.screenEdge,
@@ -416,28 +496,37 @@ class _AddStaffSheetState extends State<_AddStaffSheet> {
         top: AppSpacing.xs,
         bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.md,
       ),
-      child: Form(
+      child: SingleChildScrollView(
+        child: Form(
         key: _formKey,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Add Staff', style: AppTextStyles.headlineMd),
+            Text(
+              _isEditing
+                  ? l10n.patientsEditSheetTitle
+                  : l10n.staffListAddSheetTitle,
+              style: AppTextStyles.headlineMd,
+            ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Full name'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Name is required' : null,
+              decoration: InputDecoration(labelText: l10n.staffListNameLabel),
+              validator: (v) => v == null || v.trim().isEmpty
+                  ? l10n.staffListNameRequired
+                  : null,
             ),
             const SizedBox(height: AppSpacing.sm),
             TextFormField(
               controller: _emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(labelText: l10n.staffListEmailLabel),
               validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Email is required';
-                if (!v.contains('@')) return 'Enter a valid email';
+                if (v == null || v.trim().isEmpty) {
+                  return l10n.staffListEmailRequired;
+                }
+                if (!v.contains('@')) return l10n.staffListEmailInvalid;
                 return null;
               },
             ),
@@ -445,28 +534,32 @@ class _AddStaffSheetState extends State<_AddStaffSheet> {
             TextFormField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                hintText: 'At least 8 characters',
+              decoration: InputDecoration(
+                labelText: l10n.staffListPasswordLabel,
+                hintText: l10n.staffListPasswordHint,
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return 'Password is required';
-                if (v.length < 8) return 'Minimum 8 characters';
+                if (!_isEditing && (v == null || v.isEmpty)) {
+                  return l10n.staffListPasswordRequired;
+                }
+                if (v != null && v.isNotEmpty && v.length < 8) {
+                  return l10n.staffListPasswordTooShort;
+                }
                 return null;
               },
             ),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<UserRole>(
               initialValue: _role,
-              decoration: const InputDecoration(labelText: 'Role'),
-              items: const [
+              decoration: InputDecoration(labelText: l10n.staffListRoleLabel),
+              items: [
                 DropdownMenuItem(
                   value: UserRole.coordinator,
-                  child: Text('Coordinator'),
+                  child: Text(l10n.staffListRoleCoordinator),
                 ),
                 DropdownMenuItem(
                   value: UserRole.surgeon,
-                  child: Text('Surgeon'),
+                  child: Text(l10n.staffListRoleSurgeon),
                 ),
               ],
               onChanged: (v) {
@@ -478,23 +571,24 @@ class _AddStaffSheetState extends State<_AddStaffSheet> {
               TextFormField(
                 controller: _specialtyController,
                 decoration:
-                    const InputDecoration(labelText: 'Specialty'),
+                    InputDecoration(labelText: l10n.staffListSpecialtyLabel),
                 validator: (v) => _role == UserRole.surgeon &&
                         (v == null || v.trim().isEmpty)
-                    ? 'Specialty is required for surgeons'
+                    ? l10n.staffListSpecialtyRequired
                     : null,
               ),
             ],
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
-              label: 'Add staff',
+              label: _isEditing ? l10n.commonSave : l10n.staffListAddStaff,
               onPressed: () {
                 if (!_formKey.currentState!.validate()) return;
                 final specialty = _specialtyController.text.trim();
+                final password = _passwordController.text;
                 Navigator.of(context).pop(_StaffDraft(
                   name: _nameController.text.trim(),
                   email: _emailController.text.trim(),
-                  password: _passwordController.text,
+                  password: password.isEmpty ? null : password,
                   role: _role,
                   specialty: specialty.isEmpty ? null : specialty,
                 ));
@@ -502,6 +596,7 @@ class _AddStaffSheetState extends State<_AddStaffSheet> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

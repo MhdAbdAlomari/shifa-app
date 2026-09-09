@@ -60,3 +60,26 @@ class StaffListCreateRequested extends StaffListEvent {
   @override
   List<Object?> get props => [name, email, password, role, specialty];
 }
+
+/// [password] is optional on update — omit to leave the user's password
+/// unchanged.
+class StaffListUpdateRequested extends StaffListEvent {
+  const StaffListUpdateRequested({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.role,
+    this.password,
+    this.specialty,
+  });
+
+  final int id;
+  final String name;
+  final String email;
+  final UserRole role;
+  final String? password;
+  final String? specialty;
+
+  @override
+  List<Object?> get props => [id, name, email, role, password, specialty];
+}

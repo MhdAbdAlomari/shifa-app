@@ -7,9 +7,15 @@ class StaffService {
   final DioClient _client;
   StaffService(this._client);
 
-  // GET /api/staff
-  Future<List<User>> list() async {
-    final res = await _client.get<Map<String, dynamic>>(ApiConstants.staff);
+  // GET /api/staff  (admin, coordinator)
+  // [search] does a case-insensitive partial match against name, server-side.
+  Future<List<User>> list({String? search}) async {
+    final res = await _client.get<Map<String, dynamic>>(
+      ApiConstants.staff,
+      queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+    );
     return (res.data!['data'] as List<dynamic>)
         .map((e) => User.fromJson(e as Map<String, dynamic>))
         .toList();

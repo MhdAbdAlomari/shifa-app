@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/l10n/message_code.dart';
 import '../../data/models/user.dart';
 import '../../data/models/user_role.dart';
 import '../../data/services/staff_service.dart';
@@ -22,6 +23,7 @@ class StaffListBloc extends Bloc<StaffListEvent, StaffListState> {
     on<StaffListFilterChanged>(_onFilterChanged);
     on<StaffListDeleteRequested>(_onDelete);
     on<StaffListCreateRequested>(_onCreate);
+    on<StaffListUpdateRequested>(_onUpdate);
   }
 
   final StaffService _staffService;
@@ -53,6 +55,7 @@ class StaffListBloc extends Bloc<StaffListEvent, StaffListState> {
       emit(state.copyWith(
         status: StaffListStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -81,14 +84,17 @@ class StaffListBloc extends Bloc<StaffListEvent, StaffListState> {
       emit(state.copyWith(
         users: state.users.where((u) => u.id != event.id).toList(),
         clearDeletingId: true,
-        actionMessage: 'Staff deleted',
+        actionMessageCode: MessageCode.staffDeleted,
+        clearActionErrorMessage: true,
       ));
     } on ApiException catch (e) {
       // FK-referenced deletes surface as a 500 or 422 — we let the
       // server's message reach the admin unchanged so they know why.
       emit(state.copyWith(
         clearDeletingId: true,
-        actionMessage: e.message,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
       ));
     }
   }
@@ -109,12 +115,50 @@ class StaffListBloc extends Bloc<StaffListEvent, StaffListState> {
       emit(state.copyWith(
         users: [...state.users, created],
         creating: false,
-        actionMessage: 'Staff added',
+        actionMessageCode: MessageCode.staffAdded,
+        clearActionErrorMessage: true,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         creating: false,
-        actionMessage: e.message,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
+      ));
+    }
+  }
+
+  Future<void> _onUpdate(
+    StaffListUpdateRequested event,
+    Emitter<StaffListState> emit,
+  ) async {
+    emit(state.copyWith(saving: true, formErrors: const {}));
+    try {
+      final updated = await _staffService.update(
+        event.id,
+        name: event.name,
+        email: event.email,
+        password: event.password,
+        role: event.role,
+        specialty: event.specialty,
+        clearSpecialty: event.specialty == null,
+      );
+      emit(state.copyWith(
+        users: [
+          for (final u in state.users) u.id == updated.id ? updated : u,
+        ],
+        saving: false,
+        actionMessageCode: MessageCode.staffUpdated,
+        clearActionErrorMessage: true,
+      ));
+    } on ValidationException catch (e) {
+      emit(state.copyWith(saving: false, formErrors: e.errors));
+    } on ApiException catch (e) {
+      emit(state.copyWith(
+        saving: false,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
       ));
     }
   }
