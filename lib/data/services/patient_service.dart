@@ -6,9 +6,15 @@ class PatientService {
   final DioClient _client;
   PatientService(this._client);
 
-  // GET /api/patients
-  Future<List<Patient>> list() async {
-    final res = await _client.get<Map<String, dynamic>>(ApiConstants.patients);
+  // GET /api/patients  (admin, coordinator)
+  // [search] does a case-insensitive partial match against name, server-side.
+  Future<List<Patient>> list({String? search}) async {
+    final res = await _client.get<Map<String, dynamic>>(
+      ApiConstants.patients,
+      queryParameters: {
+        if (search != null && search.isNotEmpty) 'search': search,
+      },
+    );
     return (res.data!['data'] as List<dynamic>)
         .map((e) => Patient.fromJson(e as Map<String, dynamic>))
         .toList();
