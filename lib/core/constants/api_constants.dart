@@ -68,6 +68,7 @@ class ApiConstants {
 
   // Shared
   static const String surgeryTypes = '/surgery-types';
+  static String surgeryType(int id) => '/surgery-types/$id';
   static const String notifications = '/notifications';
   static String notificationRead(int id) => '/notifications/$id/read';
 }
