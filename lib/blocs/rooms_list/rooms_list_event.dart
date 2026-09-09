@@ -33,18 +33,46 @@ class RoomsListDeleteRequested extends RoomsListEvent {
   List<Object?> get props => [id];
 }
 
-/// Fires when the admin submits the Add Room bottom sheet.
+/// Fires when the admin/coordinator submits the Add Room bottom sheet.
 class RoomsListCreateRequested extends RoomsListEvent {
   const RoomsListCreateRequested({
     required this.name,
     this.status,
     this.supportedSpecialty,
+    this.imageBytes,
+    this.imageFilename,
   });
 
   final String name;
   final RoomStatus? status;
   final String? supportedSpecialty;
+  final List<int>? imageBytes;
+  final String? imageFilename;
 
   @override
-  List<Object?> get props => [name, status, supportedSpecialty];
+  List<Object?> get props =>
+      [name, status, supportedSpecialty, imageBytes, imageFilename];
+}
+
+/// Fires when the admin/coordinator submits the Edit Room bottom sheet.
+class RoomsListUpdateRequested extends RoomsListEvent {
+  const RoomsListUpdateRequested({
+    required this.id,
+    required this.name,
+    this.status,
+    this.supportedSpecialty,
+    this.imageBytes,
+    this.imageFilename,
+  });
+
+  final int id;
+  final String name;
+  final RoomStatus? status;
+  final String? supportedSpecialty;
+  final List<int>? imageBytes;
+  final String? imageFilename;
+
+  @override
+  List<Object?> get props =>
+      [id, name, status, supportedSpecialty, imageBytes, imageFilename];
 }

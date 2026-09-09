@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/error/exceptions.dart';
+import '../../core/l10n/message_code.dart';
 import '../../data/models/operating_room.dart';
 import '../../data/models/room_status.dart';
 import '../../data/services/room_service.dart';
@@ -25,6 +26,7 @@ class RoomsListBloc extends Bloc<RoomsListEvent, RoomsListState> {
     on<RoomsListFilterChanged>(_onFilterChanged);
     on<RoomsListDeleteRequested>(_onDelete);
     on<RoomsListCreateRequested>(_onCreate);
+    on<RoomsListUpdateRequested>(_onUpdate);
   }
 
   final RoomService _roomService;
@@ -56,6 +58,7 @@ class RoomsListBloc extends Bloc<RoomsListEvent, RoomsListState> {
       emit(state.copyWith(
         status: RoomsListStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -77,12 +80,15 @@ class RoomsListBloc extends Bloc<RoomsListEvent, RoomsListState> {
       emit(state.copyWith(
         rooms: state.rooms.where((r) => r.id != event.id).toList(),
         clearDeletingId: true,
-        actionMessage: 'Room deleted',
+        actionMessageCode: MessageCode.roomDeleted,
+        clearActionErrorMessage: true,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         clearDeletingId: true,
-        actionMessage: e.message,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
       ));
     }
   }
@@ -97,16 +103,53 @@ class RoomsListBloc extends Bloc<RoomsListEvent, RoomsListState> {
         name: event.name,
         status: event.status,
         supportedSpecialty: event.supportedSpecialty,
+        imageBytes: event.imageBytes,
+        imageFilename: event.imageFilename,
       );
       emit(state.copyWith(
         rooms: [...state.rooms, created],
         creating: false,
-        actionMessage: 'Room added',
+        actionMessageCode: MessageCode.roomAdded,
+        clearActionErrorMessage: true,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         creating: false,
-        actionMessage: e.message,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
+      ));
+    }
+  }
+
+  Future<void> _onUpdate(
+    RoomsListUpdateRequested event,
+    Emitter<RoomsListState> emit,
+  ) async {
+    emit(state.copyWith(saving: true));
+    try {
+      final updated = await _roomService.update(
+        event.id,
+        name: event.name,
+        status: event.status,
+        supportedSpecialty: event.supportedSpecialty,
+        imageBytes: event.imageBytes,
+        imageFilename: event.imageFilename,
+      );
+      emit(state.copyWith(
+        rooms: [
+          for (final r in state.rooms) r.id == updated.id ? updated : r,
+        ],
+        saving: false,
+        actionMessageCode: MessageCode.roomUpdated,
+        clearActionErrorMessage: true,
+      ));
+    } on ApiException catch (e) {
+      emit(state.copyWith(
+        saving: false,
+        actionErrorMessage: e.message,
+        actionErrorCode: e.errorCode,
+        clearActionMessageCode: true,
       ));
     }
   }

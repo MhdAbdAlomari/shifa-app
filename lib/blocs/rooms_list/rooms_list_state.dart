@@ -15,8 +15,12 @@ class RoomsListState extends Equatable {
     required this.filter,
     required this.creating,
     this.errorMessage,
+    this.errorCode,
     this.deletingId,
-    this.actionMessage,
+    this.actionMessageCode,
+    this.actionErrorMessage,
+    this.actionErrorCode,
+    this.saving = false,
   });
 
   const RoomsListState.initial()
@@ -25,16 +29,36 @@ class RoomsListState extends Equatable {
         filter = RoomsListFilter.all,
         creating = false,
         errorMessage = null,
+        errorCode = null,
         deletingId = null,
-        actionMessage = null;
+        actionMessageCode = null,
+        actionErrorMessage = null,
+        actionErrorCode = null,
+        saving = false;
 
   final RoomsListStatus status;
   final List<OperatingRoom> rooms;
   final RoomsListFilter filter;
   final bool creating;
   final String? errorMessage;
+
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
+
   final int? deletingId;
-  final String? actionMessage;
+
+  /// One-shot success toast code. UI maps it to translated text.
+  final MessageCode? actionMessageCode;
+
+  /// One-shot server error message (untranslated, from the API) shown
+  /// as-is when a mutation fails.
+  final String? actionErrorMessage;
+
+  /// error_code paired with [actionErrorMessage] — see error_code_l10n.dart.
+  final String? actionErrorCode;
+
+  /// True while an edit-sheet update request is in flight.
+  final bool saving;
 
   /// Rooms matching the current [filter]. Not memoized — the list is
   /// small enough that filtering per rebuild costs nothing.
@@ -70,10 +94,16 @@ class RoomsListState extends Equatable {
     RoomsListFilter? filter,
     bool? creating,
     String? errorMessage,
+    String? errorCode,
     int? deletingId,
-    String? actionMessage,
+    MessageCode? actionMessageCode,
+    String? actionErrorMessage,
+    String? actionErrorCode,
+    bool? saving,
     bool clearError = false,
     bool clearDeletingId = false,
+    bool clearActionMessageCode = false,
+    bool clearActionErrorMessage = false,
   }) {
     return RoomsListState(
       status: status ?? this.status,
@@ -81,8 +111,18 @@ class RoomsListState extends Equatable {
       filter: filter ?? this.filter,
       creating: creating ?? this.creating,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
       deletingId: clearDeletingId ? null : (deletingId ?? this.deletingId),
-      actionMessage: actionMessage ?? this.actionMessage,
+      actionMessageCode: clearActionMessageCode
+          ? null
+          : (actionMessageCode ?? this.actionMessageCode),
+      actionErrorMessage: clearActionErrorMessage
+          ? null
+          : (actionErrorMessage ?? this.actionErrorMessage),
+      actionErrorCode: clearActionErrorMessage
+          ? null
+          : (actionErrorCode ?? this.actionErrorCode),
+      saving: saving ?? this.saving,
     );
   }
 
@@ -93,7 +133,11 @@ class RoomsListState extends Equatable {
         filter,
         creating,
         errorMessage,
+        errorCode,
         deletingId,
-        actionMessage,
+        actionMessageCode,
+        actionErrorMessage,
+        actionErrorCode,
+        saving,
       ];
 }

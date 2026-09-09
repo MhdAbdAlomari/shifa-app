@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/constants/api_constants.dart';
 import '../../core/network/dio_client.dart';
 import '../models/operating_room.dart';
@@ -7,7 +9,7 @@ class RoomService {
   final DioClient _client;
   RoomService(this._client);
 
-  // GET /api/rooms
+  // GET /api/rooms  (admin, coordinator)
   Future<List<OperatingRoom>> list() async {
     final res = await _client.get<Map<String, dynamic>>(ApiConstants.rooms);
     return (res.data!['data'] as List<dynamic>)
@@ -15,39 +17,73 @@ class RoomService {
         .toList();
   }
 
-  // GET /api/rooms/{room}
+  // GET /api/rooms/{room}  (admin, coordinator)
   Future<OperatingRoom> show(int id) async {
     final res = await _client.get<Map<String, dynamic>>(ApiConstants.room(id));
     return OperatingRoom.fromJson(res.data!['data'] as Map<String, dynamic>);
   }
 
-  // POST /api/rooms
+  // POST /api/rooms  (admin, coordinator)
+  // Pass [imageBytes] + [imageFilename] to upload via multipart; omit both
+  // to send a plain JSON body (no image change).
   Future<OperatingRoom> create({
     required String name,
     RoomStatus? status,
     String? supportedSpecialty,
+    List<int>? imageBytes,
+    String? imageFilename,
   }) async {
+    final data = imageBytes == null
+        ? {
+            'name': name,
+            if (status != null) 'status': status.value,
+            if (supportedSpecialty != null)
+              'supported_specialty': supportedSpecialty,
+          }
+        : FormData.fromMap({
+            'name': name,
+            if (status != null) 'status': status.value,
+            if (supportedSpecialty != null)
+              'supported_specialty': supportedSpecialty,
+            'image': MultipartFile.fromBytes(imageBytes,
+                filename: imageFilename ?? 'room.png'),
+          });
     final res = await _client.post<Map<String, dynamic>>(
       ApiConstants.rooms,
-      data: {
-        'name': name,
-        if (status != null) 'status': status.value,
-        if (supportedSpecialty != null) 'supported_specialty': supportedSpecialty,
-      },
+      data: data,
     );
     return OperatingRoom.fromJson(res.data!['data'] as Map<String, dynamic>);
   }
 
-  // PUT/PATCH /api/rooms/{room}
+  // PUT/PATCH /api/rooms/{room}  (admin, coordinator)
   // Pass clearSupportedSpecialty: true to explicitly set supported_specialty to null;
-  // omit the field entirely to leave it unchanged.
+  // omit the field entirely to leave it unchanged. Pass [imageBytes] to
+  // upload a new image — this is sent as `POST` with `_method=PUT` since
+  // PHP cannot parse multipart bodies on a real PUT request.
   Future<OperatingRoom> update(
     int id, {
     String? name,
     RoomStatus? status,
     String? supportedSpecialty,
     bool clearSupportedSpecialty = false,
+    List<int>? imageBytes,
+    String? imageFilename,
   }) async {
+    if (imageBytes != null) {
+      final res = await _client.post<Map<String, dynamic>>(
+        ApiConstants.room(id),
+        data: FormData.fromMap({
+          '_method': 'PUT',
+          if (name != null) 'name': name,
+          if (status != null) 'status': status.value,
+          if (supportedSpecialty != null)
+            'supported_specialty': supportedSpecialty,
+          'image': MultipartFile.fromBytes(imageBytes,
+              filename: imageFilename ?? 'room.png'),
+        }),
+      );
+      return OperatingRoom.fromJson(res.data!['data'] as Map<String, dynamic>);
+    }
     final res = await _client.put<Map<String, dynamic>>(
       ApiConstants.room(id),
       data: {
@@ -62,7 +98,7 @@ class RoomService {
     return OperatingRoom.fromJson(res.data!['data'] as Map<String, dynamic>);
   }
 
-  // DELETE /api/rooms/{room}
+  // DELETE /api/rooms/{room}  (admin, coordinator)
   Future<String> delete(int id) async {
     final res =
         await _client.delete<Map<String, dynamic>>(ApiConstants.room(id));

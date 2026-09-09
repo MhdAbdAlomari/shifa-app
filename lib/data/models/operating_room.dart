@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../core/constants/api_constants.dart';
 import 'room_status.dart';
 
 class OperatingRoom extends Equatable {
@@ -8,6 +9,7 @@ class OperatingRoom extends Equatable {
   // Nullable: POST /rooms without status returns null (documented quirk).
   final RoomStatus? status;
   final String? supportedSpecialty;
+  final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -16,6 +18,7 @@ class OperatingRoom extends Equatable {
     required this.name,
     required this.status,
     required this.supportedSpecialty,
+    required this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -27,6 +30,7 @@ class OperatingRoom extends Equatable {
             ? null
             : RoomStatus.fromString(json['status'] as String),
         supportedSpecialty: json['supported_specialty'] as String?,
+        imageUrl: ApiConstants.resolveMediaUrl(json['image_url'] as String?),
         createdAt: DateTime.parse(json['created_at'] as String),
         updatedAt: DateTime.parse(json['updated_at'] as String),
       );
@@ -36,11 +40,12 @@ class OperatingRoom extends Equatable {
         'name': name,
         'status': status?.value,
         'supported_specialty': supportedSpecialty,
+        'image_url': imageUrl,
         'created_at': createdAt.toUtc().toIso8601String(),
         'updated_at': updatedAt.toUtc().toIso8601String(),
       };
 
   @override
   List<Object?> get props =>
-      [id, name, status, supportedSpecialty, createdAt, updatedAt];
+      [id, name, status, supportedSpecialty, imageUrl, createdAt, updatedAt];
 }
