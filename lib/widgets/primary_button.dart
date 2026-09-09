@@ -51,11 +51,41 @@ class PrimaryButton extends StatelessWidget {
         textStyle: AppTextStyles.button.copyWith(color: fg),
       );
 
-  Widget _filled() => FilledButton(
-        onPressed: isLoading ? null : onPressed,
-        style: _base(AppColors.primary, AppColors.textOnPrimary),
-        child: _content(AppColors.textOnPrimary),
-      );
+  Widget _filled() {
+    final button = FilledButton(
+      onPressed: isLoading ? null : onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: Colors.transparent,
+        disabledBackgroundColor: Colors.transparent,
+        foregroundColor: AppColors.textOnPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+        ),
+        textStyle: AppTextStyles.button.copyWith(color: AppColors.textOnPrimary),
+      ),
+      child: _content(AppColors.textOnPrimary),
+    );
+    // Layered as a gradient container behind a transparent FilledButton
+    // (rather than a raw GestureDetector) so we keep Material's ripple,
+    // focus, and disabled-opacity behavior for free.
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: onPressed == null && !isLoading
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppColors.primary, AppColors.primaryDeep],
+              ),
+        color: onPressed == null && !isLoading
+            ? AppColors.primary.withValues(alpha: 0.4)
+            : null,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusButton),
+      ),
+      child: button,
+    );
+  }
 
   Widget _subdued() => FilledButton(
         onPressed: isLoading ? null : onPressed,

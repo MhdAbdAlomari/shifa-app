@@ -24,9 +24,9 @@ class AppSpacing {
   /// `card-inner-padding: 1.25rem`).
   static const double cardPadding = 20;
 
-  /// Card corner radius. The DESIGN.md rule is 16px on every primary
-  /// container, so we use the same value across cards and modal headers.
-  static const double radiusCard = 16;
+  /// Card corner radius — 20px for a softer, more modern feel across
+  /// cards and modal headers.
+  static const double radiusCard = 20;
 
   /// Button and input radius (12px per DESIGN.md).
   static const double radiusButton = 12;
