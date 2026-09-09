@@ -6,12 +6,15 @@ import 'package:intl/intl.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/my_surgeries/my_surgeries_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
+import '../../core/l10n/message_code.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/surgery.dart';
 import '../../data/models/surgery_status.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_header.dart';
@@ -20,6 +23,22 @@ import '../../widgets/error_view.dart';
 import '../../widgets/loading_view.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/app_snack_bar.dart';
+
+String _messageText(
+  AppLocalizations l10n,
+  MessageCode? code,
+  String? error,
+  String? errorCode,
+) {
+  if (code != null) {
+    return switch (code) {
+      MessageCode.surgeryStarted => l10n.messageSurgeryStarted,
+      _ => localizedErrorMessage(l10n, code: errorCode, fallback: error ?? ''),
+    };
+  }
+  return localizedErrorMessage(l10n, code: errorCode, fallback: error ?? '');
+}
 
 class MySurgeriesScreen extends StatelessWidget {
   const MySurgeriesScreen({super.key});
@@ -43,8 +62,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'My Surgeries'),
+      appBar: AppHeader(subtitle: l10n.subtitleMySurgeries),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.surgeonMySurgeries,
@@ -53,11 +73,23 @@ class _View extends StatelessWidget {
         top: false,
         child: BlocConsumer<MySurgeriesBloc, MySurgeriesState>(
           listenWhen: (p, c) =>
-              p.actionMessage != c.actionMessage && c.actionMessage != null,
+              (p.actionMessageCode != c.actionMessageCode ||
+                  p.actionErrorMessage != c.actionErrorMessage) &&
+              (c.actionMessageCode != null || c.actionErrorMessage != null),
           listener: (context, state) {
-            ScaffoldMessenger.of(context)
-              ..clearSnackBars()
-              ..showSnackBar(SnackBar(content: Text(state.actionMessage!)));
+            final message = _messageText(
+              l10n,
+              state.actionMessageCode,
+              state.actionErrorMessage,
+              state.actionErrorCode,
+            );
+            if (state.actionErrorMessage != null) {
+              showErrorSnackBar(context, message);
+            } else {
+              ScaffoldMessenger.of(context)
+                ..clearSnackBars()
+                ..showSnackBar(SnackBar(content: Text(message)));
+            }
           },
           builder: (context, state) {
             return switch (state.status) {
@@ -65,8 +97,11 @@ class _View extends StatelessWidget {
               MySurgeriesStatus.loading =>
                 state.items.isEmpty ? const LoadingView() : _Body(state: state),
               MySurgeriesStatus.error => ErrorView(
-                  message:
-                      state.errorMessage ?? 'Failed to load your surgeries',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback: state.errorMessage ?? l10n.mySurgeriesFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<MySurgeriesBloc>()
                       .add(const MySurgeriesRequested()),
@@ -97,6 +132,7 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final userName = context.read<AuthBloc>().state.user?.name ?? '';
 
     final today = state.items.where((s) => _isToday(s.scheduledStart)).toList()
@@ -140,7 +176,7 @@ class _Body extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('My Surgeries', style: AppTextStyles.headlineMd),
+                    Text(l10n.mySurgeriesTitle, style: AppTextStyles.headlineMd),
                     Row(
                       children: [
                         const Icon(
@@ -150,7 +186,7 @@ class _Body extends StatelessWidget {
                         ),
                         const SizedBox(width: AppSpacing.xxs),
                         Text(
-                          'Today, ${_dateFmt.format(DateTime.now())}',
+                          l10n.mySurgeriesToday(_dateFmt.format(DateTime.now())),
                           style: AppTextStyles.bodySm,
                         ),
                       ],
@@ -166,15 +202,17 @@ class _Body extends StatelessWidget {
             children: [
               Expanded(
                 child: _SummaryCard(
-                  label: 'Scheduled Today',
-                  value: '${today.length} Case${today.length == 1 ? '' : 's'}',
+                  label: l10n.mySurgeriesScheduledToday,
+                  value: l10n.mySurgeriesCasesCount(today.length),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _SummaryCard(
-                  label: 'Current Status',
-                  value: hasDelayed ? 'Delayed' : 'On Schedule',
+                  label: l10n.mySurgeriesCurrentStatus,
+                  value: hasDelayed
+                      ? l10n.mySurgeriesDelayed
+                      : l10n.mySurgeriesOnSchedule,
                   accent: hasDelayed
                       ? AppColors.accentText
                       : AppColors.primary,
@@ -184,10 +222,10 @@ class _Body extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           if (today.isEmpty)
-            const EmptyView(
+            EmptyView(
               icon: Icons.medical_services_outlined,
-              title: 'No assigned surgeries today',
-              subtitle: 'Nothing on your list right now.',
+              title: l10n.mySurgeriesNoneTitle,
+              subtitle: l10n.mySurgeriesNoneSubtitle,
             )
           else ...[
             if (hasNextUp)
@@ -313,9 +351,11 @@ class _NextUpCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final start = surgery.scheduledStart.toLocal();
     final end = start.add(Duration(minutes: surgery.estimatedDurationMin));
     return AppCard(
+      hero: true,
       onTap: () => context.pushNamed(
         AppRoutes.surgeryDetail,
         pathParameters: {'id': '${surgery.id}'},
@@ -326,7 +366,9 @@ class _NextUpCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                surgery.status == SurgeryStatus.inProgress ? 'IN PROGRESS' : 'NEXT UP',
+                surgery.status == SurgeryStatus.inProgress
+                    ? l10n.mySurgeriesInProgress
+                    : l10n.mySurgeriesNextUp,
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.primary,
                   letterSpacing: 0.6,
@@ -338,7 +380,7 @@ class _NextUpCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
-            surgery.patient?.name ?? 'Patient #${surgery.patientId}',
+            surgery.patient?.name ?? l10n.mySurgeriesPatientNumber(surgery.patientId),
             style: AppTextStyles.headlineSm,
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -351,7 +393,7 @@ class _NextUpCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xxs),
               Text(
-                surgery.room?.name ?? 'Room #${surgery.roomId}',
+                surgery.room?.name ?? l10n.mySurgeriesRoomNumber(surgery.roomId),
                 style: AppTextStyles.labelLg,
               ),
               const SizedBox(width: AppSpacing.md),
@@ -370,7 +412,7 @@ class _NextUpCard extends StatelessWidget {
           if (surgery.status == SurgeryStatus.scheduled) ...[
             const SizedBox(height: AppSpacing.md),
             PrimaryButton(
-              label: 'Start Surgery',
+              label: l10n.mySurgeriesStartSurgery,
               icon: Icons.play_arrow,
               isLoading: isStarting,
               onPressed: () => context
@@ -393,6 +435,7 @@ class _UpcomingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final start = surgery.scheduledStart.toLocal();
     final end = start.add(Duration(minutes: surgery.estimatedDurationMin));
     return AppCard(
@@ -407,7 +450,7 @@ class _UpcomingCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Upcoming Case',
+                  l10n.mySurgeriesUpcomingCase,
                   style: AppTextStyles.labelSm,
                 ),
               ),
@@ -416,7 +459,7 @@ class _UpcomingCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(
-            surgery.patient?.name ?? 'Patient #${surgery.patientId}',
+            surgery.patient?.name ?? l10n.mySurgeriesPatientNumber(surgery.patientId),
             style: AppTextStyles.titleLg,
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -429,7 +472,7 @@ class _UpcomingCard extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xxs),
               Text(
-                surgery.room?.name ?? 'Room #${surgery.roomId}',
+                surgery.room?.name ?? l10n.mySurgeriesRoomNumber(surgery.roomId),
                 style: AppTextStyles.labelLg,
               ),
               const SizedBox(width: AppSpacing.md),

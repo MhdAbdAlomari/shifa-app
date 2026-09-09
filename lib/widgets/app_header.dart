@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
@@ -8,6 +9,7 @@ import '../core/router/app_routes.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_spacing.dart';
 import '../core/theme/app_text_styles.dart';
+import '../l10n/generated/app_localizations.dart';
 
 /// Fixed top header used on every authenticated screen.
 ///
@@ -34,30 +36,58 @@ class AppHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
+    // The gradient container wraps SafeArea (rather than the reverse)
+    // so the fill paints full-bleed behind the status bar too — SafeArea
+    // only insets its child with padding, it doesn't extend whatever's
+    // behind it, so nesting it the other way left a plain white strip
+    // above the gradient (item 2 fix). AnnotatedRegion switches the
+    // status bar's icons/text to light so they stay legible against the
+    // teal gradient, restored to the default (dark) once this header is
+    // no longer the topmost region — e.g. Settings' plain AppBar.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
       child: Container(
-        height: _height,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.screenEdge,
-          vertical: AppSpacing.xs,
-        ),
         decoration: const BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            bottom: BorderSide(color: AppColors.divider),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primary, AppColors.secondary],
           ),
         ),
-        child: Row(
-          children: [
-            const _Brand(),
-            const Spacer(),
-            _WordmarkColumn(subtitle: subtitle),
-            const Spacer(),
-            const _NotificationBell(),
-            const SizedBox(width: AppSpacing.xs),
-            const _UserAvatar(),
-          ],
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            height: _height,
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.screenEdge,
+              vertical: AppSpacing.xs,
+            ),
+            // A Row with two Spacers only *visually* centers the middle
+            // child when its flanking siblings are equal width — here
+            // `_Brand` (logo + wordmark) is wider than the bell+avatar
+            // cluster, so the title drifted right. A Stack with the
+            // title as a full-width, centered layer guarantees true
+            // centering regardless of the side content's width (item 5
+            // fix).
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.center,
+                  child: _TitleColumn(subtitle: subtitle),
+                ),
+                Row(
+                  children: [
+                    const _Brand(),
+                    const Spacer(),
+                    const _NotificationBell(),
+                    const SizedBox(width: AppSpacing.xs),
+                    const _UserAvatar(),
+                  ],
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -69,49 +99,41 @@ class _Brand extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(AppSpacing.xs),
-          ),
-          child: const Icon(
-            Icons.add,
-            color: AppColors.textOnPrimary,
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: AppSpacing.xs),
-        Text(
-          'Shifa',
-          style: AppTextStyles.titleLg.copyWith(color: AppColors.primary),
-        ),
-        const SizedBox(width: 2),
-        Text(
-          'OR',
-          style: AppTextStyles.labelSm.copyWith(color: AppColors.secondary),
-        ),
-      ],
+    // Just the mark — the "Shifa" wordmark itself lives in the
+    // centered [_TitleColumn] layer so it isn't shown twice.
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSpacing.xs),
+      child: Image.asset(
+        'assets/images/shifa_logo.png',
+        width: 32,
+        height: 32,
+        fit: BoxFit.cover,
+      ),
     );
   }
 }
 
-class _WordmarkColumn extends StatelessWidget {
-  const _WordmarkColumn({required this.subtitle});
+class _TitleColumn extends StatelessWidget {
+  const _TitleColumn({required this.subtitle});
 
   final String subtitle;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text('Shifa', style: AppTextStyles.titleLg),
-        Text(subtitle, style: AppTextStyles.labelSm),
+        Text(
+          l10n.appName,
+          style: AppTextStyles.titleLg.copyWith(color: AppColors.textOnPrimary),
+        ),
+        Text(
+          subtitle,
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.textOnPrimary.withValues(alpha: 0.85),
+          ),
+        ),
       ],
     );
   }
@@ -126,13 +148,13 @@ class _NotificationBell extends StatelessWidget {
       builder: (context, unread) {
         return IconButton(
           onPressed: () => context.goNamed(AppRoutes.notifications),
-          tooltip: 'Notifications',
+          tooltip: AppLocalizations.of(context).notificationsTooltip,
           icon: Stack(
             clipBehavior: Clip.none,
             children: [
               const Icon(
                 Icons.notifications_outlined,
-                color: AppColors.textSecondary,
+                color: AppColors.textOnPrimary,
               ),
               if (unread > 0)
                 Positioned(
@@ -145,7 +167,7 @@ class _NotificationBell extends StatelessWidget {
                       color: AppColors.danger,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.surface,
+                        color: AppColors.primary,
                         width: 2,
                       ),
                     ),
@@ -177,37 +199,64 @@ class _UserAvatar extends StatelessWidget {
       onSelected: (value) {
         if (value == 'logout') {
           context.read<AuthBloc>().add(const AuthLogoutRequested());
+        } else if (value == 'settings') {
+          context.pushNamed(AppRoutes.settings);
         }
       },
-      itemBuilder: (context) => [
-        PopupMenuItem<String>(
-          enabled: false,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(user?.name ?? '', style: AppTextStyles.labelLg),
-              Text(user?.email ?? '', style: AppTextStyles.bodySm),
-            ],
+      itemBuilder: (context) {
+        final l10n = AppLocalizations.of(context);
+        return [
+          PopupMenuItem<String>(
+            enabled: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(user?.name ?? '', style: AppTextStyles.labelLg),
+                Text(user?.email ?? '', style: AppTextStyles.bodySm),
+              ],
+            ),
           ),
-        ),
-        const PopupMenuDivider(),
-        const PopupMenuItem<String>(
-          value: 'logout',
-          child: Row(
-            children: [
-              Icon(Icons.logout, size: 18, color: AppColors.textSecondary),
-              SizedBox(width: AppSpacing.xs),
-              Text('Log out'),
-            ],
+          const PopupMenuDivider(),
+          PopupMenuItem<String>(
+            value: 'settings',
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.settings_outlined,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(l10n.settingsTitle),
+              ],
+            ),
           ),
-        ),
-      ],
+          PopupMenuItem<String>(
+            value: 'logout',
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.logout,
+                  size: 18,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(l10n.logOut),
+              ],
+            ),
+          ),
+        ];
+      },
       child: Container(
         width: 36,
         height: 36,
-        decoration: const BoxDecoration(
-          color: AppColors.primary,
+        decoration: BoxDecoration(
+          color: AppColors.primaryDeep,
           shape: BoxShape.circle,
+          border: Border.all(
+            color: AppColors.textOnPrimary.withValues(alpha: 0.6),
+            width: 1.5,
+          ),
         ),
         alignment: Alignment.center,
         child: Text(
