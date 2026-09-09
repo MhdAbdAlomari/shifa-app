@@ -16,6 +16,9 @@ class Surgery extends Equatable {
   final int createdBy;
   final SurgeryPriority priority;
   final DateTime scheduledStart;
+  // Computed server-side (scheduled_start + estimated_duration_min); not
+  // present on every endpoint (e.g. /my-surgeries omits it) — null there.
+  final DateTime? scheduledEnd;
   final int estimatedDurationMin;
   final DateTime? actualStart;
   final DateTime? actualEnd;
@@ -41,6 +44,7 @@ class Surgery extends Equatable {
     required this.createdBy,
     required this.priority,
     required this.scheduledStart,
+    this.scheduledEnd,
     required this.estimatedDurationMin,
     required this.actualStart,
     required this.actualEnd,
@@ -61,6 +65,9 @@ class Surgery extends Equatable {
         createdBy: json['created_by'] as int,
         priority: SurgeryPriority.fromString(json['priority'] as String),
         scheduledStart: DateTime.parse(json['scheduled_start'] as String),
+        scheduledEnd: json['scheduled_end'] == null
+            ? null
+            : DateTime.parse(json['scheduled_end'] as String),
         estimatedDurationMin: json['estimated_duration_min'] as int,
         actualStart: json['actual_start'] == null
             ? null
@@ -96,6 +103,8 @@ class Surgery extends Equatable {
         'created_by': createdBy,
         'priority': priority.value,
         'scheduled_start': scheduledStart.toUtc().toIso8601String(),
+        if (scheduledEnd != null)
+          'scheduled_end': scheduledEnd!.toUtc().toIso8601String(),
         'estimated_duration_min': estimatedDurationMin,
         'actual_start': actualStart?.toUtc().toIso8601String(),
         'actual_end': actualEnd?.toUtc().toIso8601String(),
@@ -117,6 +126,7 @@ class Surgery extends Equatable {
         createdBy,
         priority,
         scheduledStart,
+        scheduledEnd,
         estimatedDurationMin,
         actualStart,
         actualEnd,

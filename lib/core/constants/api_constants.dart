@@ -39,9 +39,10 @@ class ApiConstants {
   static const String logout = '/logout';
   static const String me = '/me';
 
-  // Admin
+  // Admin / coordinator
   static const String rooms = '/rooms';
   static String room(int id) => '/rooms/$id';
+  static String roomSurgeries(int id) => '/rooms/$id/surgeries';
   static const String staff = '/staff';
   static String staffMember(int id) => '/staff/$id';
   static const String dashboardStats = '/dashboard/stats';

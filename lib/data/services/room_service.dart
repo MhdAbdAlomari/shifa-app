@@ -4,6 +4,8 @@ import '../../core/constants/api_constants.dart';
 import '../../core/network/dio_client.dart';
 import '../models/operating_room.dart';
 import '../models/room_status.dart';
+import '../models/room_surgeries_response.dart';
+import 'date_format.dart';
 
 class RoomService {
   final DioClient _client;
@@ -21,6 +23,23 @@ class RoomService {
   Future<OperatingRoom> show(int id) async {
     final res = await _client.get<Map<String, dynamic>>(ApiConstants.room(id));
     return OperatingRoom.fromJson(res.data!['data'] as Map<String, dynamic>);
+  }
+
+  // GET /api/rooms/{room}/surgeries  (admin, coordinator)
+  // Both params default server-side to "today" when omitted.
+  Future<RoomSurgeriesResponse> surgeries(
+    int roomId, {
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final res = await _client.get<Map<String, dynamic>>(
+      ApiConstants.roomSurgeries(roomId),
+      queryParameters: {
+        if (from != null) 'from': formatServerDate(from),
+        if (to != null) 'to': formatServerDate(to),
+      },
+    );
+    return RoomSurgeriesResponse.fromJson(res.data!);
   }
 
   // POST /api/rooms  (admin, coordinator)
