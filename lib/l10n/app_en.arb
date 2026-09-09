@@ -1,0 +1,548 @@
+{
+  "@@locale": "en",
+
+  "appName": "Shifa",
+  "@appName": {"description": "App wordmark"},
+
+  "errorUnauthenticated": "Your session has expired. Please log in again.",
+  "errorRoleForbidden": "You don't have permission to do that.",
+  "errorUnauthorized": "You're not authorized to do that.",
+  "errorNotFound": "That item couldn't be found. It may have been removed.",
+  "errorMethodNotAllowed": "That action isn't supported right now.",
+  "errorValidationFailed": "Please check the highlighted fields and try again.",
+  "errorInvalidCredentials": "Incorrect email or password.",
+  "errorSurgeryNotOwned": "You can only do that for your own surgeries.",
+  "errorSurgeryTimeConflict": "This room is already booked at that time.",
+  "errorRoomAvailabilityWindowViolation": "That time falls outside this room's available hours.",
+  "errorSurgeryNotInProgress": "This action requires the surgery to be in progress.",
+  "errorSuggestionNotPending": "This suggestion has already been actioned.",
+  "errorNotificationNotOwned": "You can only manage your own notifications.",
+  "errorSlotRoomMismatch": "That availability slot doesn't belong to this room.",
+  "errorSlotInvalidTimeRange": "The end time must be after the start time.",
+  "errorGeneric": "Something went wrong. Please try again.",
+  "appTagline": "OR",
+
+  "navRooms": "Rooms",
+  "navStaff": "Staff",
+  "navAlerts": "Alerts",
+  "navSuggestions": "Suggestions",
+  "navSchedule": "Schedule",
+  "navSurgeries": "Surgeries",
+  "navManage": "Manage",
+  "navSettings": "Settings",
+
+  "manageTitle": "Manage",
+  "manageSubtitle": "Rooms, staff, patients, and surgery types",
+  "manageRoomsSubtitle": "View, add, and configure operating rooms",
+  "manageStaffSubtitle": "View, add, and edit coordinators and surgeons",
+  "managePatientsSubtitle": "Search, add, and edit patient records",
+  "manageSurgeryTypesSubtitle": "Configure procedures, durations, and default rooms",
+
+  "commonCancel": "Cancel",
+  "commonDelete": "Delete",
+  "commonRemove": "Remove",
+  "commonTryAgain": "Try again",
+  "commonSave": "Save",
+  "commonClose": "Close",
+  "commonUnknown": "Unknown",
+  "commonNotAvailable": "—",
+
+  "subtitleOrSchedule": "Or Schedule",
+  "subtitleMySurgeries": "My Surgeries",
+  "subtitleClinicalAlerts": "Clinical Alerts",
+  "subtitleDelaySuggestions": "Delay Suggestions",
+  "subtitleSettings": "Settings",
+
+  "notificationsTooltip": "Notifications",
+  "logOut": "Log out",
+
+  "loginTitle": "Shifa",
+  "loginSubtitle": "Sign in to manage today's operating room schedule.",
+  "loginEmailLabel": "Email",
+  "loginEmailHint": "you@shifa.test",
+  "loginEmailRequired": "Email is required",
+  "loginEmailInvalid": "Enter a valid email",
+  "loginPasswordLabel": "Password",
+  "loginPasswordRequired": "Password is required",
+  "loginButton": "Log in",
+
+  "roomTimelineTitle": "Room Timeline",
+  "roomTimelineSuitesMonitored": "{count} Suites Monitored",
+  "@roomTimelineSuitesMonitored": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomTimelineNoRooms": "No operating rooms",
+  "roomTimelineNoRoomsSubtitle": "Ask an admin to add rooms.",
+  "roomTimelineFailedToLoad": "Failed to load timeline",
+  "roomTimelineScheduleSurgery": "Schedule surgery",
+  "roomTimelineOr": "OR {id}",
+  "@roomTimelineOr": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "roomTimelinePatientNumber": "Patient #{id}",
+  "@roomTimelinePatientNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "roomTimelineSurgeryFallback": "Surgery",
+  "roomTimelineEnds": "ENDS",
+  "roomTimelineNext": "NEXT",
+  "roomTimelineStatus": "STATUS",
+  "roomTimelineVacantReady": "Vacant & Ready",
+  "roomTimelineVacantReadySubtitle": "Ready for immediate intake",
+  "roomTimelinePreparing": "Preparing",
+  "roomTimelinePreparingSubtitle": "Room is being set up",
+  "roomTimelineTurnover": "Turnover in progress",
+  "roomTimelineTurnoverSubtitle": "Environmental services",
+  "roomTimelineInUse": "In use",
+  "roomTimelineInUseSubtitle": "No case assigned in the schedule",
+  "roomTimelineUnknownStatusSubtitle": "Room status not set",
+  "roomTimelineAvailable": "Available",
+  "roomTimelineCleaning": "Cleaning",
+
+  "statusCompleted": "Completed",
+  "statusCancelled": "Cancelled",
+  "statusPending": "Pending",
+  "statusAccepted": "Accepted",
+  "statusRejected": "Rejected",
+
+  "scheduleSurgeryTitle": "New Surgery",
+  "scheduleSurgerySubtitle": "Case Scheduling & OR Assignment",
+  "scheduleSurgeryFailedToLoad": "Failed to load form",
+  "scheduleSurgeryMissingSetupTitle": "Missing setup data",
+  "scheduleSurgeryMissingSetupSubtitle": "Ask an admin to add patients, surgeons, and surgery types before scheduling.",
+  "scheduleSurgeryPatientLabel": "Patient",
+  "scheduleSurgeryPatientHint": "Select a patient",
+  "scheduleSurgerySurgeonLabel": "Surgeon",
+  "scheduleSurgerySurgeonHint": "Select a surgeon",
+  "scheduleSurgeryTypeLabel": "Surgery Type",
+  "scheduleSurgeryTypeHint": "Select a type",
+  "scheduleSurgeryTypeDuration": "{name} ({minutes}m)",
+  "@scheduleSurgeryTypeDuration": {
+    "placeholders": {"name": {"type": "String"}, "minutes": {"type": "int"}}
+  },
+  "scheduleSurgeryPriorityLabel": "Priority Level",
+  "scheduleSurgeryPriorityNormal": "Normal",
+  "scheduleSurgeryPriorityEmergency": "Emergency",
+  "scheduleSurgeryAutoSchedule": "Auto-schedule",
+  "scheduleSurgeryPickManually": "Pick manually",
+
+  "pickManuallyTitle": "Pick manually",
+  "pickManuallySubtitle": "Choose the room and start time",
+  "pickManuallyFailedToLoad": "Failed to load rooms",
+  "pickManuallyOperatingRoom": "Operating Room",
+  "pickManuallyScheduledStart": "Scheduled start",
+  "pickManuallyPickDateTime": "Pick a date and time",
+  "pickManuallyConfirm": "Confirm scheduling",
+  "pickManuallyScheduled": "Surgery scheduled",
+
+  "autoScheduleTitle": "Auto-Schedule Suggestions",
+  "autoScheduleSubtitle": "Optimal room slots based on surgeon availability",
+  "autoScheduleFailedToLoad": "Failed to load options",
+  "autoScheduleNoPendingTitle": "No pending requests",
+  "autoScheduleNoPendingSubtitle": "Add one or more surgeries to auto-schedule as a batch.",
+  "autoScheduleAddRequest": "Add request",
+  "autoScheduleAddRequestFirst": "Add a request first",
+  "autoScheduleGenerateProposals": "Generate proposals ({count})",
+  "@autoScheduleGenerateProposals": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "autoScheduleAddSheetTitle": "Add pending request",
+  "autoScheduleAddToBatch": "Add to batch",
+  "autoScheduleAllActionedTitle": "All proposals actioned",
+  "autoScheduleAllActionedSubtitle": "{accepted} scheduled, {skipped} skipped.",
+  "@autoScheduleAllActionedSubtitle": {
+    "placeholders": {"accepted": {"type": "int"}, "skipped": {"type": "int"}}
+  },
+  "autoScheduleStartNewBatch": "Start a new batch",
+  "autoScheduleAccept": "Accept",
+  "autoScheduleReject": "Reject",
+  "autoScheduleToday": "Today",
+  "autoScheduleTomorrow": "Tomorrow",
+
+  "delaySuggestionsTitle": "Delay Resolution",
+  "delaySuggestionsNonePending": "No pending adjustments",
+  "delaySuggestionsPendingCount": "{count, plural, one{1 pending adjustment} other{{count} pending adjustments}}",
+  "@delaySuggestionsPendingCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "delaySuggestionsActiveOverrun": "ACTIVE OVERRUN",
+  "delaySuggestionsFailedToLoad": "Failed to load suggestions",
+  "delaySuggestionsNoneTitle": "No pending suggestions",
+  "delaySuggestionsNoneSubtitle": "You're all caught up.",
+  "delaySuggestionsSurgeryNumber": "Surgery #{id}",
+  "@delaySuggestionsSurgeryNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "delaySuggestionsRoomNumber": "Room #{id}",
+  "@delaySuggestionsRoomNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+
+  "roomsListTitle": "Operating Rooms",
+  "roomsListSuitesConfigured": "{count, plural, one{1 Operating Suite Configured} other{{count} Operating Suites Configured}}",
+  "@roomsListSuitesConfigured": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFilterAll": "All Suites ({count})",
+  "@roomsListFilterAll": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFilterInUse": "In use ({count})",
+  "@roomsListFilterInUse": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFilterFree": "Free ({count})",
+  "@roomsListFilterFree": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFilterPreparing": "Preparing ({count})",
+  "@roomsListFilterPreparing": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFilterCleaning": "Cleaning ({count})",
+  "@roomsListFilterCleaning": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "roomsListFailedToLoad": "Failed to load rooms",
+  "roomsListNoMatchTitle": "No matching rooms",
+  "roomsListNoMatchSubtitle": "Try a different filter.",
+  "roomsListAddRoom": "Add Room",
+  "roomsListDeleteTitle": "Delete {name}?",
+  "@roomsListDeleteTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "roomsListDeleteBody": "This cannot be undone.",
+  "roomsListAddSheetTitle": "Add Operating Room",
+  "roomsListEditSheetTitle": "Edit Operating Room",
+  "roomsListNameLabel": "Name (e.g. OR-6)",
+  "roomsListNameRequired": "Name is required",
+  "roomsListSpecialtyLabel": "Supported specialty (optional)",
+  "roomsListInitialStatusLabel": "Initial status",
+  "roomsListStatusFree": "Free",
+  "roomsListStatusPreparing": "Preparing",
+  "roomsListStatusInUse": "In use",
+  "roomsListStatusCleaning": "Cleaning",
+
+  "staffListTitle": "Staff Directory",
+  "staffListSubtitle": "Surgical suites & clinical personnel overview",
+  "staffListActiveCount": "{count} Active",
+  "@staffListActiveCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "staffListSearchHint": "Filter by name, email or specialty…",
+  "staffListFilterAll": "All ({count})",
+  "@staffListFilterAll": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "staffListFilterSurgeons": "Surgeons ({count})",
+  "@staffListFilterSurgeons": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "staffListFilterCoordinators": "Coordinators ({count})",
+  "@staffListFilterCoordinators": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "staffListFailedToLoad": "Failed to load staff",
+  "staffListNoMatchTitle": "No matching staff",
+  "staffListNoMatchSubtitle": "Try a different filter or search term.",
+  "staffListAddStaff": "Add Staff",
+  "staffListRemoveTitle": "Remove {name}?",
+  "@staffListRemoveTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "staffListRemoveBody": "If this user has scheduled surgeries, the removal will fail.",
+  "staffListAddSheetTitle": "Add Staff",
+  "staffListNameLabel": "Full name",
+  "staffListNameRequired": "Name is required",
+  "staffListEmailLabel": "Email",
+  "staffListEmailRequired": "Email is required",
+  "staffListEmailInvalid": "Enter a valid email",
+  "staffListPasswordLabel": "Password",
+  "staffListPasswordHint": "At least 8 characters",
+  "staffListPasswordRequired": "Password is required",
+  "staffListPasswordTooShort": "Minimum 8 characters",
+  "staffListRoleLabel": "Role",
+  "staffListRoleCoordinator": "Coordinator",
+  "staffListRoleSurgeon": "Surgeon",
+  "staffListRoleAdmin": "Admin",
+  "staffListSpecialtyLabel": "Specialty",
+  "staffListSpecialtyRequired": "Specialty is required for surgeons",
+
+  "notificationsTitle": "Notifications",
+  "notificationsNewCount": "{count} new",
+  "@notificationsNewCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "notificationsMarkAllRead": "Mark all read",
+  "notificationsFailedToLoad": "Failed to load notifications",
+  "notificationsNoneTitle": "No notifications",
+  "notificationsNoneSubtitle": "Updates about your surgeries will appear here.",
+  "notificationsJustNow": "just now",
+  "notificationsMinutesAgo": "{count}m ago",
+  "@notificationsMinutesAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "notificationsHoursAgo": "{count}h ago",
+  "@notificationsHoursAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "notificationsDaysAgo": "{count}d ago",
+  "@notificationsDaysAgo": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+
+  "mySurgeriesTitle": "My Surgeries",
+  "mySurgeriesToday": "Today, {date}",
+  "@mySurgeriesToday": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "mySurgeriesScheduledToday": "Scheduled Today",
+  "mySurgeriesCasesCount": "{count, plural, one{1 Case} other{{count} Cases}}",
+  "@mySurgeriesCasesCount": {
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "mySurgeriesCurrentStatus": "Current Status",
+  "mySurgeriesDelayed": "Delayed",
+  "mySurgeriesOnSchedule": "On Schedule",
+  "mySurgeriesNoneTitle": "No assigned surgeries today",
+  "mySurgeriesNoneSubtitle": "Nothing on your list right now.",
+  "mySurgeriesFailedToLoad": "Failed to load your surgeries",
+  "mySurgeriesInProgress": "IN PROGRESS",
+  "mySurgeriesNextUp": "NEXT UP",
+  "mySurgeriesUpcomingCase": "Upcoming Case",
+  "mySurgeriesStartSurgery": "Start Surgery",
+  "mySurgeriesPatientNumber": "Patient #{id}",
+  "@mySurgeriesPatientNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "mySurgeriesRoomNumber": "Room #{id}",
+  "@mySurgeriesRoomNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+
+  "surgeryDetailTitle": "Surgery Details",
+  "surgeryDetailFailedToLoad": "Failed to load surgery",
+  "surgeryDetailPatientNumber": "Patient #{id}",
+  "@surgeryDetailPatientNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "surgeryDetailMrn": "MRN {mrn}",
+  "@surgeryDetailMrn": {
+    "placeholders": {"mrn": {"type": "String"}}
+  },
+  "surgeryDetailProcedure": "PROCEDURE",
+  "surgeryDetailSurgeryFallback": "Surgery",
+  "surgeryDetailAssignedSuite": "Assigned Suite",
+  "surgeryDetailRoomNumber": "Room #{id}",
+  "@surgeryDetailRoomNumber": {
+    "placeholders": {"id": {"type": "int"}}
+  },
+  "surgeryDetailTargetPace": "Target Pace",
+  "surgeryDetailMinutesShort": "{minutes} min",
+  "@surgeryDetailMinutesShort": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "surgeryDetailScheduledSlot": "Scheduled Slot",
+  "surgeryDetailActualTime": "Actual Time",
+  "surgeryDetailInProgressStarted": "In Progress (Started {time})",
+  "@surgeryDetailInProgressStarted": {
+    "placeholders": {"time": {"type": "String"}}
+  },
+  "surgeryDetailEnded": "Ended {time}",
+  "@surgeryDetailEnded": {
+    "placeholders": {"time": {"type": "String"}}
+  },
+  "surgeryDetailEstimatedDuration": "Estimated duration {minutes} mins",
+  "@surgeryDetailEstimatedDuration": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "surgeryDetailStartSurgery": "Start Surgery",
+  "surgeryDetailReportDelay": "Report Delay",
+  "delayFormTitle": "Report Delay",
+  "delayFormNewEndLabel": "New expected end time",
+  "delayFormNewEndHint": "Pick a date and time",
+  "delayFormNewEndRequired": "Pick a new expected end time",
+  "delayFormReasonLabel": "Reason",
+  "delayFormReasonHint": "What's causing the delay?",
+  "delayFormReasonRequired": "A reason is required",
+  "delayFormSubmit": "Submit delay report",
+  "delayResultAutoApprovedTitle": "Delay approved automatically",
+  "delayResultPendingTitle": "Delay pending coordinator review",
+  "delayResultDismiss": "Dismiss",
+  "delayResultAutoApprovedBody": "The new expected end time does not conflict with any other surgery in this room. This surgery now runs until {newEnd}.",
+  "@delayResultAutoApprovedBody": {
+    "placeholders": {"newEnd": {"type": "String"}}
+  },
+  "delayResultPendingBody": "Extending this surgery would conflict with surgery #{surgeryId} in the same room. {count, plural, =0{No suggestions were generated} one{1 suggestion was generated} other{{count} suggestions were generated}} for the affected downstream surgeries.",
+  "@delayResultPendingBody": {
+    "placeholders": {
+      "surgeryId": {"type": "int"},
+      "count": {"type": "int"}
+    }
+  },
+  "surgeryDetailMarkComplete": "Mark Complete",
+  "surgeryDetailCancelSurgery": "Cancel surgery",
+
+  "messageRoomDeleted": "Room deleted",
+  "messageRoomAdded": "Room added",
+  "messageRoomUpdated": "Room updated",
+  "messageStaffDeleted": "Staff deleted",
+  "messageStaffAdded": "Staff added",
+  "messageStaffUpdated": "Staff updated",
+  "messageSurgeryStarted": "Surgery started",
+  "messageSurgeryCancelled": "Surgery cancelled",
+  "messagePatientDeleted": "Patient deleted",
+  "messagePatientAdded": "Patient added",
+  "messagePatientUpdated": "Patient updated",
+  "messageSurgeryTypeDeleted": "Surgery type deleted",
+  "messageSurgeryTypeAdded": "Surgery type added",
+  "messageSurgeryTypeUpdated": "Surgery type updated",
+  "messageSlotAdded": "Availability slot added",
+  "messageSlotUpdated": "Availability slot updated",
+  "messageSlotDeleted": "Availability slot deleted",
+
+  "patientsTitle": "Patients",
+  "patientsSearchHint": "Search patients by name…",
+  "patientsFailedToLoad": "Failed to load patients",
+  "patientsNoneTitle": "No patients found",
+  "patientsNoneSubtitle": "Try a different search, or add a new patient.",
+  "patientsAddPatient": "Add Patient",
+  "patientsAddSheetTitle": "Add Patient",
+  "patientsEditSheetTitle": "Edit Patient",
+  "patientsNameLabel": "Full name",
+  "patientsNameRequired": "Name is required",
+  "patientsMrnLabel": "MRN",
+  "patientsMrnRequired": "MRN is required",
+  "patientsNotesLabel": "Medical notes (optional)",
+  "patientsDeleteTitle": "Delete {name}?",
+  "@patientsDeleteTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "patientsDeleteBody": "This also cancels/removes their scheduled surgeries. This cannot be undone.",
+
+  "surgeryTypesTitle": "Surgery Types",
+  "surgeryTypesFailedToLoad": "Failed to load surgery types",
+  "surgeryTypesNoneTitle": "No surgery types",
+  "surgeryTypesNoneSubtitle": "Add one to start scheduling surgeries of this type.",
+  "surgeryTypesAdd": "Add Surgery Type",
+  "surgeryTypesAddSheetTitle": "Add Surgery Type",
+  "surgeryTypesEditSheetTitle": "Edit Surgery Type",
+  "surgeryTypesNameLabel": "Name",
+  "surgeryTypesNameRequired": "Name is required",
+  "surgeryTypesDurationLabel": "Average duration (minutes)",
+  "surgeryTypesDurationRequired": "Duration is required",
+  "surgeryTypesDurationInvalid": "Enter a whole number of minutes (5 or more)",
+  "surgeryTypesSpecialtyLabel": "Required specialty (optional)",
+  "surgeryTypesDefaultRoomLabel": "Default room (optional)",
+  "surgeryTypesNoDefaultRoom": "None",
+  "surgeryTypesDeleteTitle": "Delete {name}?",
+  "@surgeryTypesDeleteTitle": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "surgeryTypesDeleteBody": "This cannot be undone.",
+  "surgeryTypesDurationMinutes": "{minutes} min",
+  "@surgeryTypesDurationMinutes": {
+    "placeholders": {"minutes": {"type": "int"}}
+  },
+  "surgeryTypesDefaultRoomValue": "Default room: {name}",
+  "@surgeryTypesDefaultRoomValue": {
+    "placeholders": {"name": {"type": "String"}}
+  },
+
+  "roomDetailTitle": "Room Details",
+  "roomDetailFailedToLoad": "Failed to load room",
+  "roomDetailFilterToday": "Today",
+  "roomDetailFilterThisWeek": "This Week",
+  "roomDetailFilterLastWeek": "Last Week",
+  "roomDetailFilterCustom": "Custom Range",
+  "roomDetailFilterAll": "All",
+  "roomDetailFilterThisMonth": "This Month",
+  "roomDetailNoSurgeriesTitle": "No surgeries in this range",
+  "roomDetailNoSurgeriesSubtitle": "Try a different date range.",
+  "roomDetailManageAvailability": "Manage availability",
+  "roomDetailChangePhoto": "Change photo",
+  "roomDetailAddPhoto": "Add photo",
+
+  "roomSlotsTitle": "Weekly Availability",
+  "roomSlotsSubtitle": "Rooms with no slots defined are bookable at any time.",
+  "roomSlotsNoneTitle": "No availability slots",
+  "roomSlotsNoneSubtitle": "This room is bookable at any time.",
+  "roomSlotsAdd": "Add Slot",
+  "roomSlotsAddSheetTitle": "Add Availability Slot",
+  "roomSlotsDayLabel": "Day of week",
+  "roomSlotsStartLabel": "Start time",
+  "roomSlotsEndLabel": "End time",
+  "roomSlotsEndBeforeStart": "End time must be after start time",
+  "roomSlotsDeleteTitle": "Delete this slot?",
+  "roomSlotsDeleteBody": "This cannot be undone.",
+  "daySunday": "Sunday",
+  "dayMonday": "Monday",
+  "dayTuesday": "Tuesday",
+  "dayWednesday": "Wednesday",
+  "dayThursday": "Thursday",
+  "dayFriday": "Friday",
+  "daySaturday": "Saturday",
+
+  "scheduleSurgeryDurationLabel": "Estimated duration (minutes)",
+  "scheduleSurgeryDurationRequired": "Duration is required",
+  "scheduleSurgeryDurationInvalid": "Enter a whole number of minutes (5 or more)",
+
+  "settingsNavLabel": "Settings",
+
+  "settingsTitle": "Settings",
+  "settingsLanguageSection": "Language",
+  "settingsLanguageEnglish": "English",
+  "settingsLanguageArabic": "العربية",
+  "settingsAbout": "About the app",
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "settingsTermsConditions": "Terms & Conditions",
+  "settingsLogout": "Logout",
+
+  "aboutTitle": "About",
+  "aboutAppName": "Shifa (شفاء)",
+  "aboutDescription": "Shifa is a hospital operating-room scheduling system designed to help hospital staff manage operating rooms, schedule surgeries efficiently, and coordinate in real time using smart scheduling optimization.",
+  "aboutVersion": "Version {version}",
+  "@aboutVersion": {
+    "placeholders": {"version": {"type": "String"}}
+  },
+  "aboutDeveloperSection": "Developer",
+  "aboutDeveloperName": "Mohamed Abdulrahman Alomari (محمد عبد الرحمن العمري)",
+  "aboutDeveloperBlurb": "Developed by a Flutter developer specializing in clean architecture and scalable mobile applications.",
+
+  "privacyTitle": "Privacy Policy",
+  "privacyLastUpdated": "Last updated: {date}",
+  "@privacyLastUpdated": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "privacyIntro": "This Privacy Policy explains what information Shifa collects and how it is used.",
+  "privacyCollectedHeading": "What data is collected",
+  "privacyCollectedBody": "We collect account information (name, email, role) and operational data needed to run the scheduling system (patient records, surgery schedules, room and staff assignments). All data stays within the hospital's own private backend and is never stored on third-party servers.",
+  "privacyUsageHeading": "How data is used",
+  "privacyUsageBody": "Data is used solely to operate and coordinate operating-room scheduling within the hospital — assigning rooms, tracking surgery status, and notifying relevant staff.",
+  "privacySharingHeading": "Sharing",
+  "privacySharingBody": "Data is not shared with any third party. It is only accessible to authorized hospital staff through this application.",
+  "privacyStorageHeading": "Storage & security",
+  "privacyStorageBody": "Data is stored securely on the hospital's own server infrastructure, protected by authenticated access and role-based permissions.",
+  "privacyContactHeading": "Contact",
+  "privacyContactBody": "For privacy concerns, contact mohamed.alomari.dev@gmail.com.",
+
+  "termsTitle": "Terms & Conditions",
+  "termsLastUpdated": "Last updated: {date}",
+  "@termsLastUpdated": {
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "termsIntro": "These Terms govern the use of the Shifa operating-room scheduling application.",
+  "termsAuthorizedHeading": "Authorized use only",
+  "termsAuthorizedBody": "This app is intended for authorized hospital staff only — admin, coordinator, and surgeon roles. Accounts are provisioned and managed by hospital administration.",
+  "termsAccuracyHeading": "Accuracy of information",
+  "termsAccuracyBody": "Users are responsible for the accuracy of the information they enter, including patient, surgery, and scheduling details.",
+  "termsDecisionSupportHeading": "Decision support, not medical authority",
+  "termsDecisionSupportBody": "Scheduling suggestions produced by the app are decision-support tools only. Final medical and scheduling decisions remain the responsibility of hospital staff, not the application.",
+  "termsAccountsHeading": "Accounts",
+  "termsAccountsBody": "Accounts are provisioned and managed by hospital administration. Users may not share credentials.",
+  "termsContactHeading": "Contact",
+  "termsContactBody": "For questions about these terms, contact mohamed.alomari.dev@gmail.com.",
+
+  "aboutEmailAction": "Email",
+  "aboutPhoneAction": "Call"
+}

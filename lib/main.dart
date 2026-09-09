@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'blocs/auth/auth_bloc.dart';
+import 'blocs/locale/locale_cubit.dart';
 import 'blocs/unread_notifications/unread_notifications_cubit.dart';
 import 'core/di.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/generated/app_localizations.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,11 +35,13 @@ class _ShifaAppState extends State<ShifaApp> {
   late final AuthBloc _authBloc = widget.container.buildAuthBloc();
   late final UnreadNotificationsCubit _unread =
       UnreadNotificationsCubit(widget.container.notificationService);
+  late final LocaleCubit _locale = LocaleCubit()..load();
 
   @override
   void dispose() {
     _authBloc.close();
     _unread.close();
+    _locale.close();
     super.dispose();
   }
 
@@ -48,6 +53,7 @@ class _ShifaAppState extends State<ShifaApp> {
         providers: [
           BlocProvider<AuthBloc>.value(value: _authBloc),
           BlocProvider<UnreadNotificationsCubit>.value(value: _unread),
+          BlocProvider<LocaleCubit>.value(value: _locale),
         ],
         child: BlocListener<AuthBloc, AuthState>(
           // Whenever the user finishes authenticating, seed the unread
@@ -69,11 +75,23 @@ class _ShifaAppState extends State<ShifaApp> {
           child: Builder(
             builder: (context) {
               final router = buildAppRouter(_authBloc);
-              return MaterialApp.router(
-                title: 'Shifa',
-                debugShowCheckedModeBanner: false,
-                theme: AppTheme.light(),
-                routerConfig: router,
+              return BlocBuilder<LocaleCubit, Locale>(
+                builder: (context, locale) {
+                  return MaterialApp.router(
+                    title: 'Shifa',
+                    debugShowCheckedModeBanner: false,
+                    theme: AppTheme.light(),
+                    routerConfig: router,
+                    locale: locale,
+                    supportedLocales: AppLocalizations.supportedLocales,
+                    localizationsDelegates: const [
+                      ...AppLocalizations.localizationsDelegates,
+                      GlobalMaterialLocalizations.delegate,
+                      GlobalWidgetsLocalizations.delegate,
+                      GlobalCupertinoLocalizations.delegate,
+                    ],
+                  );
+                },
               );
             },
           ),
