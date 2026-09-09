@@ -16,23 +16,34 @@ class ErrorInterceptor extends Interceptor {
     final status = response.statusCode;
     final data = response.data;
     final message = _extractMessage(data) ?? 'Request failed';
+    final errorCode = _extractErrorCode(data);
+    final meta = _extractMeta(data);
 
     ApiException mapped;
     switch (status) {
       case 401:
-        mapped = UnauthenticatedException(message);
+        mapped =
+            UnauthenticatedException(message: message, errorCode: errorCode, meta: meta);
         break;
       case 403:
-        mapped = ForbiddenException(message);
+        mapped =
+            ForbiddenException(message: message, errorCode: errorCode, meta: meta);
         break;
       case 404:
-        mapped = NotFoundException(message);
+        mapped =
+            NotFoundException(message: message, errorCode: errorCode, meta: meta);
         break;
       case 422:
-        mapped = ValidationException(message, _extractErrors(data));
+        mapped = ValidationException(
+          message,
+          _extractErrors(data),
+          errorCode: errorCode,
+          meta: meta,
+        );
         break;
       default:
-        mapped = ApiException(message, statusCode: status);
+        mapped = ApiException(message,
+            statusCode: status, errorCode: errorCode, meta: meta);
     }
 
     handler.reject(err.copyWith(error: mapped));
@@ -41,6 +52,20 @@ class ErrorInterceptor extends Interceptor {
   static String? _extractMessage(dynamic data) {
     if (data is Map && data['message'] is String) {
       return data['message'] as String;
+    }
+    return null;
+  }
+
+  static String? _extractErrorCode(dynamic data) {
+    if (data is Map && data['error_code'] is String) {
+      return data['error_code'] as String;
+    }
+    return null;
+  }
+
+  static Map<String, dynamic>? _extractMeta(dynamic data) {
+    if (data is Map && data['meta'] is Map) {
+      return Map<String, dynamic>.from(data['meta'] as Map);
     }
     return null;
   }
