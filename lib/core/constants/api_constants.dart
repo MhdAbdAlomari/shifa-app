@@ -43,6 +43,9 @@ class ApiConstants {
   static const String rooms = '/rooms';
   static String room(int id) => '/rooms/$id';
   static String roomSurgeries(int id) => '/rooms/$id/surgeries';
+  static String roomSlots(int roomId) => '/rooms/$roomId/slots';
+  static String roomSlot(int roomId, int slotId) =>
+      '/rooms/$roomId/slots/$slotId';
   static const String staff = '/staff';
   static String staffMember(int id) => '/staff/$id';
   static const String dashboardStats = '/dashboard/stats';

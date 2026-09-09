@@ -6,6 +6,7 @@ import '../data/services/dashboard_service.dart';
 import '../data/services/notification_service.dart';
 import '../data/services/patient_service.dart';
 import '../data/services/room_service.dart';
+import '../data/services/room_slot_service.dart';
 import '../data/services/schedule_suggestion_service.dart';
 import '../data/services/staff_service.dart';
 import '../data/services/surgery_service.dart';
@@ -34,6 +35,7 @@ class AppContainer {
     required this.scheduleSuggestionService,
     required this.surgeryTypeService,
     required this.notificationService,
+    required this.roomSlotService,
   });
 
   factory AppContainer.production() {
@@ -51,6 +53,7 @@ class AppContainer {
       scheduleSuggestionService: ScheduleSuggestionService(dioClient),
       surgeryTypeService: SurgeryTypeService(dioClient),
       notificationService: NotificationService(dioClient),
+      roomSlotService: RoomSlotService(dioClient),
     );
   }
 
@@ -66,6 +69,7 @@ class AppContainer {
   final ScheduleSuggestionService scheduleSuggestionService;
   final SurgeryTypeService surgeryTypeService;
   final NotificationService notificationService;
+  final RoomSlotService roomSlotService;
 
   /// The app-wide [AuthBloc]. Exposed as a factory so the widget tree
   /// takes ownership of its lifecycle via [BlocProvider].
