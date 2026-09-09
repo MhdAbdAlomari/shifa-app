@@ -68,6 +68,7 @@ class ScheduleSurgeryBloc
       emit(state.copyWith(
         loadStatus: ScheduleSurgeryLoadStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -76,11 +77,26 @@ class ScheduleSurgeryBloc
     ScheduleSurgeryFieldChanged event,
     Emitter<ScheduleSurgeryState> emit,
   ) {
+    // Picking a new surgery type re-seeds the duration field from its
+    // average_duration_min — the coordinator can still overwrite it via
+    // its own field-changed event afterward.
+    int? seededDuration;
+    if (event.surgeryTypeId != null &&
+        event.surgeryTypeId != state.surgeryTypeId) {
+      final type = state.surgeryTypes
+          .where((t) => t.id == event.surgeryTypeId)
+          .cast<SurgeryType?>()
+          .firstWhere((_) => true, orElse: () => null);
+      seededDuration = type?.averageDurationMin;
+    }
     emit(state.copyWith(
       patientId: event.patientId ?? state.patientId,
       surgeonId: event.surgeonId ?? state.surgeonId,
       surgeryTypeId: event.surgeryTypeId ?? state.surgeryTypeId,
       priority: event.priority ?? state.priority,
+      estimatedDurationMin: event.estimatedDurationMin ??
+          seededDuration ??
+          state.estimatedDurationMin,
     ));
   }
 }

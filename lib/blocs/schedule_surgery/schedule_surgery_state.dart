@@ -12,7 +12,9 @@ class ScheduleSurgeryState extends Equatable {
     this.surgeonId,
     this.surgeryTypeId,
     this.priority,
+    this.estimatedDurationMin,
     this.errorMessage,
+    this.errorCode,
   });
 
   const ScheduleSurgeryState.initial()
@@ -24,7 +26,9 @@ class ScheduleSurgeryState extends Equatable {
         surgeonId = null,
         surgeryTypeId = null,
         priority = null,
-        errorMessage = null;
+        estimatedDurationMin = null,
+        errorMessage = null,
+        errorCode = null;
 
   final ScheduleSurgeryLoadStatus loadStatus;
 
@@ -37,7 +41,15 @@ class ScheduleSurgeryState extends Equatable {
   final int? surgeryTypeId;
   final SurgeryPriority? priority;
 
+  /// Editable duration, pre-filled from the selected surgery type's
+  /// `average_duration_min` when the type changes, but overridable by
+  /// the coordinator before submitting.
+  final int? estimatedDurationMin;
+
   final String? errorMessage;
+
+  /// error_code paired with [errorMessage] — see error_code_l10n.dart.
+  final String? errorCode;
 
   /// Screen enables both CTAs (Auto-schedule / Pick manually) only when
   /// all four required fields are filled.
@@ -56,7 +68,9 @@ class ScheduleSurgeryState extends Equatable {
     int? surgeonId,
     int? surgeryTypeId,
     SurgeryPriority? priority,
+    int? estimatedDurationMin,
     String? errorMessage,
+    String? errorCode,
     bool clearError = false,
   }) {
     return ScheduleSurgeryState(
@@ -68,7 +82,9 @@ class ScheduleSurgeryState extends Equatable {
       surgeonId: surgeonId ?? this.surgeonId,
       surgeryTypeId: surgeryTypeId ?? this.surgeryTypeId,
       priority: priority ?? this.priority,
+      estimatedDurationMin: estimatedDurationMin ?? this.estimatedDurationMin,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      errorCode: clearError ? null : (errorCode ?? this.errorCode),
     );
   }
 
@@ -82,6 +98,8 @@ class ScheduleSurgeryState extends Equatable {
         surgeonId,
         surgeryTypeId,
         priority,
+        estimatedDurationMin,
         errorMessage,
+        errorCode,
       ];
 }

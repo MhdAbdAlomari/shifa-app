@@ -14,6 +14,7 @@ class SurgeryDraft extends Equatable {
     required this.surgeonId,
     required this.surgeryTypeId,
     required this.priority,
+    this.estimatedDurationMin,
   });
 
   final int patientId;
@@ -21,6 +22,11 @@ class SurgeryDraft extends Equatable {
   final int surgeryTypeId;
   final SurgeryPriority priority;
 
+  /// Coordinator-editable override of the surgery type's average
+  /// duration. Null means "let the server default it."
+  final int? estimatedDurationMin;
+
   @override
-  List<Object?> get props => [patientId, surgeonId, surgeryTypeId, priority];
+  List<Object?> get props =>
+      [patientId, surgeonId, surgeryTypeId, priority, estimatedDurationMin];
 }

@@ -19,13 +19,16 @@ class ScheduleSurgeryFieldChanged extends ScheduleSurgeryEvent {
     this.surgeonId,
     this.surgeryTypeId,
     this.priority,
+    this.estimatedDurationMin,
   });
 
   final int? patientId;
   final int? surgeonId;
   final int? surgeryTypeId;
   final SurgeryPriority? priority;
+  final int? estimatedDurationMin;
 
   @override
-  List<Object?> get props => [patientId, surgeonId, surgeryTypeId, priority];
+  List<Object?> get props =>
+      [patientId, surgeonId, surgeryTypeId, priority, estimatedDurationMin];
 }

@@ -49,6 +49,7 @@ class PickManuallyBloc extends Bloc<PickManuallyEvent, PickManuallyState> {
       emit(state.copyWith(
         loadStatus: PickManuallyLoadStatus.error,
         errorMessage: e.message,
+        errorCode: e.errorCode,
       ));
     }
   }
@@ -84,6 +85,7 @@ class PickManuallyBloc extends Bloc<PickManuallyEvent, PickManuallyState> {
         surgeryTypeId: state.draft.surgeryTypeId,
         priority: state.draft.priority,
         scheduledStart: state.scheduledStart!,
+        estimatedDurationMin: state.draft.estimatedDurationMin,
       );
       emit(state.copyWith(
         submitStatus: PickManuallySubmitStatus.success,
@@ -93,12 +95,14 @@ class PickManuallyBloc extends Bloc<PickManuallyEvent, PickManuallyState> {
       emit(state.copyWith(
         submitStatus: PickManuallySubmitStatus.failure,
         submitErrorMessage: e.message,
+        submitErrorCode: e.errorCode,
         submitErrors: e.errors,
       ));
     } on ApiException catch (e) {
       emit(state.copyWith(
         submitStatus: PickManuallySubmitStatus.failure,
         submitErrorMessage: e.message,
+        submitErrorCode: e.errorCode,
       ));
     }
   }

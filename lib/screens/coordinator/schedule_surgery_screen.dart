@@ -5,12 +5,14 @@ import 'package:go_router/go_router.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/schedule_surgery/schedule_surgery_bloc.dart';
 import '../../core/di.dart';
+import '../../core/l10n/error_code_l10n.dart';
 import '../../core/router/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/surgery_draft.dart';
 import '../../data/models/surgery_priority.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../widgets/app_bottom_nav_bar.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/empty_view.dart';
@@ -46,8 +48,9 @@ class _View extends StatelessWidget {
     final user = context.read<AuthBloc>().state.user;
     if (user == null) return const SizedBox.shrink();
 
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const AppHeader(subtitle: 'Or Schedule'),
+      appBar: AppHeader(subtitle: l10n.subtitleOrSchedule),
       bottomNavigationBar: AppBottomNavBar(
         role: user.role,
         currentRouteName: AppRoutes.coordinatorSchedule,
@@ -61,18 +64,22 @@ class _View extends StatelessWidget {
               ScheduleSurgeryLoadStatus.loading =>
                 const LoadingView(),
               ScheduleSurgeryLoadStatus.error => ErrorView(
-                  message: state.errorMessage ?? 'Failed to load form',
+                  message: localizedErrorMessage(
+                    l10n,
+                    code: state.errorCode,
+                    fallback:
+                        state.errorMessage ?? l10n.scheduleSurgeryFailedToLoad,
+                  ),
                   onRetry: () => context
                       .read<ScheduleSurgeryBloc>()
                       .add(const ScheduleSurgeryOptionsRequested()),
                 ),
               ScheduleSurgeryLoadStatus.loaded => _canRenderForm(state)
                   ? _Form(state: state)
-                  : const EmptyView(
+                  : EmptyView(
                       icon: Icons.info_outline,
-                      title: 'Missing setup data',
-                      subtitle:
-                          'Ask an admin to add patients, surgeons, and surgery types before scheduling.',
+                      title: l10n.scheduleSurgeryMissingSetupTitle,
+                      subtitle: l10n.scheduleSurgeryMissingSetupSubtitle,
                     ),
             };
           },
@@ -87,13 +94,45 @@ class _View extends StatelessWidget {
       s.surgeryTypes.isNotEmpty;
 }
 
-class _Form extends StatelessWidget {
+class _Form extends StatefulWidget {
   const _Form({required this.state});
 
   final ScheduleSurgeryState state;
 
   @override
+  State<_Form> createState() => _FormState();
+}
+
+class _FormState extends State<_Form> {
+  late final TextEditingController _durationController =
+      TextEditingController(
+    text: widget.state.estimatedDurationMin?.toString() ?? '',
+  );
+  int? _lastSeenDuration;
+
+  ScheduleSurgeryState get state => widget.state;
+
+  @override
+  void didUpdateWidget(covariant _Form oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // The Bloc re-seeds estimatedDurationMin whenever the surgery type
+    // changes — mirror that into the controller without clobbering
+    // manual edits the coordinator makes to the same value.
+    if (state.estimatedDurationMin != _lastSeenDuration) {
+      _lastSeenDuration = state.estimatedDurationMin;
+      _durationController.text = state.estimatedDurationMin?.toString() ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _durationController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return CustomScrollView(
       slivers: [
         SliverPadding(
@@ -108,7 +147,11 @@ class _Form extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(
+                    Directionality.of(context) == TextDirection.rtl
+                        ? Icons.arrow_forward
+                        : Icons.arrow_back,
+                  ),
                   onPressed: () => context.canPop()
                       ? context.pop()
                       : context.goNamed(AppRoutes.coordinatorTimeline),
@@ -118,9 +161,9 @@ class _Form extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('New Surgery', style: AppTextStyles.headlineMd),
+                      Text(l10n.scheduleSurgeryTitle, style: AppTextStyles.headlineMd),
                       Text(
-                        'Case Scheduling & OR Assignment',
+                        l10n.scheduleSurgerySubtitle,
                         style: AppTextStyles.bodySm,
                       ),
                     ],
@@ -138,11 +181,11 @@ class _Form extends StatelessWidget {
             children: [
               _FieldSection(
                 icon: Icons.person_outline,
-                label: 'Patient',
+                label: l10n.scheduleSurgeryPatientLabel,
                 child: DropdownButtonFormField<int>(
                   initialValue: state.patientId,
-                  decoration:
-                      const InputDecoration(hintText: 'Select a patient'),
+                  decoration: InputDecoration(
+                      hintText: l10n.scheduleSurgeryPatientHint),
                   items: [
                     for (final p in state.patients)
                       DropdownMenuItem(value: p.id, child: Text(p.name)),
@@ -154,11 +197,11 @@ class _Form extends StatelessWidget {
               ),
               _FieldSection(
                 icon: Icons.badge_outlined,
-                label: 'Surgeon',
+                label: l10n.scheduleSurgerySurgeonLabel,
                 child: DropdownButtonFormField<int>(
                   initialValue: state.surgeonId,
-                  decoration:
-                      const InputDecoration(hintText: 'Select a surgeon'),
+                  decoration: InputDecoration(
+                      hintText: l10n.scheduleSurgerySurgeonHint),
                   items: [
                     for (final s in state.surgeons)
                       DropdownMenuItem(
@@ -177,17 +220,17 @@ class _Form extends StatelessWidget {
               ),
               _FieldSection(
                 icon: Icons.medical_services_outlined,
-                label: 'Surgery Type',
+                label: l10n.scheduleSurgeryTypeLabel,
                 child: DropdownButtonFormField<int>(
                   initialValue: state.surgeryTypeId,
                   decoration:
-                      const InputDecoration(hintText: 'Select a type'),
+                      InputDecoration(hintText: l10n.scheduleSurgeryTypeHint),
                   items: [
                     for (final t in state.surgeryTypes)
                       DropdownMenuItem(
                         value: t.id,
-                        child:
-                            Text('${t.name} (${t.averageDurationMin}m)'),
+                        child: Text(l10n.scheduleSurgeryTypeDuration(
+                            t.name, t.averageDurationMin)),
                       ),
                   ],
                   onChanged: (v) => context
@@ -196,19 +239,37 @@ class _Form extends StatelessWidget {
                 ),
               ),
               _FieldSection(
+                icon: Icons.timelapse,
+                label: l10n.scheduleSurgeryDurationLabel,
+                child: TextFormField(
+                  controller: _durationController,
+                  keyboardType: TextInputType.number,
+                  onChanged: (v) {
+                    final parsed = int.tryParse(v.trim());
+                    if (parsed != null) {
+                      context.read<ScheduleSurgeryBloc>().add(
+                            ScheduleSurgeryFieldChanged(
+                              estimatedDurationMin: parsed,
+                            ),
+                          );
+                    }
+                  },
+                ),
+              ),
+              _FieldSection(
                 icon: Icons.flag_outlined,
-                label: 'Priority Level',
+                label: l10n.scheduleSurgeryPriorityLabel,
                 child: SegmentedButton<SurgeryPriority>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: SurgeryPriority.normal,
-                      label: Text('Normal'),
-                      icon: Icon(Icons.check_circle_outline),
+                      label: Text(l10n.scheduleSurgeryPriorityNormal),
+                      icon: const Icon(Icons.check_circle_outline),
                     ),
                     ButtonSegment(
                       value: SurgeryPriority.emergency,
-                      label: Text('Emergency'),
-                      icon: Icon(Icons.warning_amber_outlined),
+                      label: Text(l10n.scheduleSurgeryPriorityEmergency),
+                      icon: const Icon(Icons.warning_amber_outlined),
                     ),
                   ],
                   selected:
@@ -226,7 +287,7 @@ class _Form extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               PrimaryButton(
-                label: 'Auto-schedule',
+                label: l10n.scheduleSurgeryAutoSchedule,
                 icon: Icons.auto_awesome,
                 onPressed: state.isReady
                     ? () => _goAuto(context, state)
@@ -234,7 +295,7 @@ class _Form extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               PrimaryButton(
-                label: 'Pick manually',
+                label: l10n.scheduleSurgeryPickManually,
                 icon: Icons.tune,
                 variant: PrimaryButtonVariant.subdued,
                 onPressed: state.isReady
@@ -255,6 +316,7 @@ class _Form extends StatelessWidget {
       surgeonId: s.surgeonId!,
       surgeryTypeId: s.surgeryTypeId!,
       priority: s.priority!,
+      estimatedDurationMin: s.estimatedDurationMin,
     );
     context.pushNamed(AppRoutes.coordinatorPickManually, extra: draft);
   }
@@ -265,6 +327,7 @@ class _Form extends StatelessWidget {
       surgeonId: s.surgeonId!,
       surgeryTypeId: s.surgeryTypeId!,
       priority: s.priority!,
+      estimatedDurationMin: s.estimatedDurationMin,
     );
     context.pushNamed(
       AppRoutes.coordinatorAutoScheduleReview,
