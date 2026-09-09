@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -32,8 +33,18 @@ class AppTheme {
         backgroundColor: AppColors.background,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
-        centerTitle: false,
+        // Item 5 fix: every screen title (both this AppBarTheme, used
+        // by plain AppBar sub-screens, and AppHeader's own Stack-based
+        // centering) should center horizontally, not hug the leading
+        // edge.
+        centerTitle: true,
         titleTextStyle: AppTextStyles.titleLg,
+        // Default for every plain-AppBar screen (Settings, About,
+        // Privacy, Terms, etc.) — dark icons/text read correctly on
+        // this theme's light background. Screens with the gradient
+        // AppHeader override this via their own AnnotatedRegion
+        // (item 2 fix).
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,
